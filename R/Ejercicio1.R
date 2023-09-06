@@ -207,3 +207,34 @@ head(reducedDim(sce, "UMAP"))
 
 ## Enumerar los resultados de reducción de dimensiones de SCE
 reducedDims(sce)
+
+
+### Alternative experiments ###
+
+## Extraer la información de ERCC de nuestro SCE para el set de datos de 416b
+ercc.sce.416b <- altExp(sce.416b, "ERCC")
+
+## Inspeccionar el SCE para los datos de ERCC
+ercc.sce.416b
+
+## Agregar el SCE de ERCC como un experimento alternativo a nuestro SCE
+altExp(sce, "ERCC") <- ercc.sce.416b
+
+## Revisar nuestro objeto SCE actualizado (altExpNames - ERCC SIRV)
+sce
+
+## ¿Qué tan grande es el objeto de R (En MB)?
+lobstr::obj_size(sce) / 1024^2
+
+## Enumerar los experimentos alternativos almacenados en nuestro objeto sce
+altExps(sce)
+
+
+## Si creamos un subconjunto del SCE por muestra (célula)
+sce.subset <- sce[, 1:10]
+ncol(sce.subset)
+## automáticamente se obtiene el subconjunto de los experimentos alternativos
+ncol(altExp(sce.subset))
+
+## ¿Qué tan grande es el objeto de R (En MB)?
+lobstr::obj_size(sce) / 1024^2
