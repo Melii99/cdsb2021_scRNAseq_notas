@@ -64,3 +64,53 @@ assays(sce)
 
 ## Nombres de los assays
 assayNames(sce)
+
+### Metadata ###
+
+## Extraer la información de las muestras (metadata) del set de datos de 416b
+colData.416b <- colData(sce.416b)
+
+## Explorar datos
+table(colData.416b$phenotype)
+## fue en varios dias?
+table(colData.416b$block)
+
+## Agregar algo de esa información (fenotipo y block) a nuestro objeto SCE
+colData(sce) <- colData.416b[, c("phenotype", "block")]
+
+## Revisar el objeto actualizado
+sce
+
+## Accesar a la información de las muestras (metadata) en nuestro SCE
+colData(sce)
+
+## Accesar una columna específica de la información de las muestras (metadata)
+table(sce$block)
+
+## Otra manera de accesar una columna específica de metadata
+table(colData(sce)$block)
+
+
+### Agregar columnas nuevas a colData: Ej. addPerCellQC ###
+
+## Añadir datos de control de calidad
+sce <- scater::addPerCellQC(sce.416b)
+
+## Accesar a la metadata (información de las muestras) del objeto SCE actualizado
+colData(sce)
+
+## Revisar el objeto SCE actualizado
+sce
+
+## ¿Qué tan grande es el objeto de R (En MB)?
+lobstr::obj_size(sce) / 1024^2
+
+## Agrega las cuentas normalizadas (logNormCounts) de nuevo
+sce <- scater::logNormCounts(sce)
+
+## ¿Qué tan grande es el objeto de R (En MB)?
+lobstr::obj_size(sce) / 1024^2
+
+## Ejemplo: obtener el subconjunto de células de fenotipo "wild type"
+## Recordatorio: las células son columnas del SCE
+sce[, sce$phenotype == "wild type phenotype"]
