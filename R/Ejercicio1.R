@@ -159,3 +159,19 @@ lobstr::obj_size(sce) / 1024^2
 ## Ejemplo: obtener el subconjunto de datos donde los genes están en el cromosoma 3
 ## NOTA: which() fue necesario para lidear con los nombres de cromosoma que son NA
 sce[which(rowData(sce)$chromosome == "3"), ]
+
+
+### Slot Metadata ###
+
+## Accesar a la información de nuestro experimento usando metadata() (actualmente vacía)
+metadata(sce)
+
+## Es posible agregar cualquier tipo de información a metadata()
+## Ej. Agregar genes favoritos y analista
+metadata(sce) <- list(
+  favourite_genes = c("Shh", "Nck1", "Diablo"),
+  analyst = c("Pete")
+)
+
+## Accesar a la información de metadata() de SCE actualizado
+metadata(sce)
