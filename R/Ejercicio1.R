@@ -175,3 +175,35 @@ metadata(sce) <- list(
 
 ## Accesar a la información de metadata() de SCE actualizado
 metadata(sce)
+
+
+### Slot de reducción de dimensiones ###
+
+## Agregarlos componentes principales (PCs) de las logcounts
+sce <- scater::runPCA(sce)
+
+## Revisa el objeto actualizado (PCA agregado a reducedDimNames)
+sce
+
+## Accesar a la matriz de PCA del componente (slot) reducedDims (6 cells, 3 PCs)
+reducedDim(sce, "PCA")[1:6, 1:3]
+
+## Agregar una representación de los logcounts en t-SNE
+sce <- scater::runTSNE(sce)
+
+# Revisa el objeto actualizado (TSNE agregado a reducedDimNames)
+sce
+
+## Accesar a la matriz de t-SNE en el componente (slot) de reducedDims
+head(reducedDim(sce, "TSNE"))
+
+
+## Agregar manualmente una representación de los logcounts en UMAP
+u <- uwot::umap(t(logcounts(sce)), n_components = 2)
+## Agrega la matriz de UMAP al componente (slot) reducedDims
+reducedDim(sce, "UMAP") <- u
+# Accesa a la matriz de UMAP desde el componente (slot) reducedDims
+head(reducedDim(sce, "UMAP"))
+
+## Enumerar los resultados de reducción de dimensiones de SCE
+reducedDims(sce)
