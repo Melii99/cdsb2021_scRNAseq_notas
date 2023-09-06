@@ -16,6 +16,7 @@ counts.416b <- counts(sce.416b)
 class(counts.416b)
 dim(counts.416b)
 
+
 ### SCE object ###
 
 ## Construir un nuevo objeto SCE de la matriz de cuentas
@@ -36,6 +37,7 @@ lobstr::obj_size(sce) / 1024^2
 
 # 2. El método específico para accesar la matriz de cuentas "counts"
 #counts(sce)[110:115, 1:3]
+
 
 ### Agregar más assays ###
 
@@ -65,7 +67,8 @@ assays(sce)
 ## Nombres de los assays
 assayNames(sce)
 
-### Metadata ###
+
+### Metadata (colData) ###
 
 ## Extraer la información de las muestras (metadata) del set de datos de 416b
 colData.416b <- colData(sce.416b)
@@ -90,7 +93,6 @@ table(sce$block)
 ## Otra manera de accesar una columna específica de metadata
 table(colData(sce)$block)
 
-
 ### Agregar columnas nuevas a colData: Ej. addPerCellQC ###
 
 ## Añadir datos de control de calidad
@@ -114,3 +116,46 @@ lobstr::obj_size(sce) / 1024^2
 ## Ejemplo: obtener el subconjunto de células de fenotipo "wild type"
 ## Recordatorio: las células son columnas del SCE
 sce[, sce$phenotype == "wild type phenotype"]
+
+
+### metadata de features (rowData) ###
+
+## Accesar la información de los genes de  SCE (actualmente vacío)
+rowData(sce)
+
+### Agregar columnas nuevas a rowData: Ej. addPerFeatureQC ###
+
+sce <- scater::addPerFeatureQC(sce)
+
+## Accesar a la metadata (información de las muestras) del SCE actualizado
+rowData(sce)
+
+## ¿Qué tan grande es el objeto de R (En MB)?
+lobstr::obj_size(sce) / 1024^2
+
+
+### Descargar los archivos de anotación  ###
+
+## Archivos para anotación de la base de datos de Ensembl vía AnnotationHub
+library("AnnotationHub")
+ah <- AnnotationHub()
+query(ah, c("Mus musculus", "Ensembl", "v97"))
+
+## Obtener la posición del cromosoma para cada gen
+ensdb <- ah[["AH73905"]]
+chromosome <- mapIds(ensdb,
+                     keys = rownames(sce),
+                     keytype = "GENEID",
+                     column = "SEQNAME"
+)
+rowData(sce)$chromosome <- chromosome
+
+## Accesar a la metadata (información de las muestras) en el SCE actualizado
+rowData(sce)
+
+## ¿Qué tan grande es el objeto de R (En MB)?
+lobstr::obj_size(sce) / 1024^2
+
+## Ejemplo: obtener el subconjunto de datos donde los genes están en el cromosoma 3
+## NOTA: which() fue necesario para lidear con los nombres de cromosoma que son NA
+sce[which(rowData(sce)$chromosome == "3"), ]
