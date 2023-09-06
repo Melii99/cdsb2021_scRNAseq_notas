@@ -238,3 +238,18 @@ ncol(altExp(sce.subset))
 
 ## ¿Qué tan grande es el objeto de R (En MB)?
 lobstr::obj_size(sce) / 1024^2
+
+
+### Size factors ###
+
+## Extraer los factores de tamaño (size factors)
+# Estos fueron añadidos a nuestro objeto cuando corrimos scater::logNormCounts(sce)
+head(sizeFactors(sce))
+
+## "Automáticamente" reemplaza los factores de tamaño
+sce <- scran::computeSumFactors(sce)
+head(sizeFactors(sce))
+
+## "Manualmente" reemplaza los factores de tamaño
+sizeFactors(sce) <- scater::librarySizeFactors(sce)
+head(sizeFactors(sce))
