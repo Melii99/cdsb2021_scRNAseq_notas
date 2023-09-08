@@ -24,6 +24,9 @@ sce <- SingleCellExperiment(
   rowData = row.data
 )
 
+## Agregar logcounts
+sce <- scater::logNormCounts(sce)
+
 sce # 100 columnas-células, 30 filas-genes
 
 ## ¿Cuántos genes tenemos? (30)
@@ -61,3 +64,9 @@ min_sce[, min_sce$level1class == "interneurons" | min_sce$level1class == "pyrami
 
 ## Con este subconjunto, crea el objeto tej_min_sce
 tej_min_sce <- min_sce[, min_sce$level1class == "interneurons" | min_sce$level1class == "pyramidal CA1"]
+
+## Una vez que tengan el objeto ´SingleCellExperiment´ llamado ´tej_min_sce´, corran el siguiente código.
+
+library("scater")
+
+plotHeatmap(object = tej_min_sce, features = rownames(tej_min_sce), order_columns_by = "level1class")
