@@ -70,3 +70,9 @@ tej_min_sce <- min_sce[, min_sce$level1class == "interneurons" | min_sce$level1c
 library("scater")
 
 plotHeatmap(object = tej_min_sce, features = rownames(tej_min_sce), order_columns_by = "level1class")
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
