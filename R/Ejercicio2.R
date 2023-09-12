@@ -68,11 +68,37 @@ tej_min_sce <- min_sce[, min_sce$level1class == "interneurons" | min_sce$level1c
 ## Una vez que tengan el objeto ´SingleCellExperiment´ llamado ´tej_min_sce´, corran el siguiente código.
 
 library("scater")
-
 plotHeatmap(object = tej_min_sce, features = rownames(tej_min_sce), order_columns_by = "level1class")
+
+
+## Ejercicio extra
+
+## Realizar los mismos pasos, pero ahora con el Ensembl gene IDs de la lista de genes
+
+# Lista de Ensembl gene IDs de interés
+int_gen <- c("ENSMUSG00000071076", "ENSMUSG00000002076", "ENSMUSG00000024962", "ENSMUSG00000031224", "ENSMSG00000036560", "ENSMUSG00000037499", "ENSMUSG00000006276", "ENSMUSG00000035521", "ENSMUSG00000047388", "ENSMUSG0000051079", "ENSMUSG00000076122", "ENSMUSG00000029229", "ENSMUSG00000022309", "ENSMUSG00000036766", "ENSMUSG00000070880", "ENSMUSG00000026787", "ENSMUSG00000066392", "ENSMUSG00000036298", "ENSMUSG00000037771", "ENSMUSG00000030310")
+
+# Extracción de datos de genes de interés utilizando los Ensembl gene IDs
+sce[rowData(sce)$Ensembl %in% int_gen, ]
+
+# Crear un objeto llamado min_sce con los datos de solo esos genes (usando rowData(sce)$Ensembl para ensembl IDs)
+min_sce <- sce[rowData(sce)$Ensembl %in% int_gen, ]
+
+# Identificación de genes que pertenecen al tejido interneurons o al tejido pyramidal CA1
+min_sce[, min_sce$level1class == "interneurons" | min_sce$level1class == "pyramidal CA1"]
+
+# Crear un objeto llamado tej_min_sce con las células seleccionadas
+tej_min_sce <- min_sce[, min_sce$level1class == "interneurons" | min_sce$level1class == "pyramidal CA1"]
+
+## Una vez que tengan el objeto ´SingleCellExperiment´ llamado ´tej_min_sce´, corran el siguiente código.
+
+library("scater")
+plotHeatmap(object = tej_min_sce, features = rownames(tej_min_sce), order_columns_by = "level1class")
+
 
 ### Información de la sesión de R ###
 Sys.time()
 proc.time()
 options(width = 120)
 sessioninfo::session_info()
+
