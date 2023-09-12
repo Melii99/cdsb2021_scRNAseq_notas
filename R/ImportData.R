@@ -11,6 +11,7 @@ library("BiocFileCache")
 bfc <- BiocFileCache()
 
 ## Crear una URL de descarga para el archivo tar.gz
+pbmc.url <-
   paste0(
     "http://cf.10xgenomics.com/samples/cell-vdj/",
     "3.1.0/vdj_v1_hs_pbmc3/",
@@ -89,3 +90,101 @@ sce.sis_seq
 
 ## ¿Qué tan grande es el objeto de R (En MB)?
 lobstr::obj_size(sce.sis_seq) / 1024^2
+
+
+### Archivos Varios ###
+
+
+#La dirección https://www.ebi.ac.uk/arrayexpress/files/E-MTAB-5522/E-MTAB-5522.processed.1.zip
+#ya no se encuentra disponible!
+
+'''
+
+## Ejemplo de descarga de archivos varios
+library("BiocFileCache")
+
+bfc <- BiocFileCache()
+
+## Archivo de cuentas
+## Ya no se encuentra disponible :c
+
+lun_counts.url <-
+  paste0(
+    "https://www.ebi.ac.uk/arrayexpress/files/",
+    "E-MTAB-5522/E-MTAB-5522.processed.1.zip"
+  )
+
+##  bfcrpath para descargar el archivo ZIP desde la URL
+lun_counts.data <- bfcrpath(bfc, lun_counts.url)
+
+## Archivo colData
+lun_coldata.url <-
+  paste0(
+    "https://www.ebi.ac.uk/arrayexpress/files/",
+    "E-MTAB-5522/E-MTAB-5522.sdrf.txt"
+  )
+
+##  bfcrpath para descargar el archivo ZIP desde la URL
+lun_coldata.data <- bfcrpath(bfc, lun_coldata.url)
+
+## Extraer los archivos en un directorio temporal
+lun_counts.dir <- tempfile("lun_counts.")
+unzip(lun_counts.data, exdir = lun_counts.dir)
+
+## Enumerar los archivos que descargamos y extrajimos
+list.files(lun_counts.dir)
+
+
+## Leer la matriz de cuentas (para una placa)
+lun.counts <- read.delim(
+  file.path(lun_counts.dir, "counts_Calero_20160113.tsv"),
+  header = TRUE,
+  row.names = 1,
+  check.names = FALSE
+)
+
+## Almacenar la información de la longitud de los genes para después
+gene.lengths <- lun.counts$Length
+
+## Convertir los datos de cuentas de genez a una matriz (quitamos las longitudes)
+lun.counts <- as.matrix(lun.counts[, -1])
+
+
+## Leer la información de las muestras (células)
+lun.coldata <- read.delim(lun_coldata.data,
+                          check.names = FALSE,
+                          stringsAsFactors = FALSE
+)
+
+library("S4Vectors")
+
+lun.coldata <- as(lun.coldata, "DataFrame")
+
+## Poner en orden la información de las muestras para que sea idéntico al orden en la matriz de cuentas
+m <- match(
+  colnames(lun.counts),
+  lun.coldata$`Source Name`
+)
+
+lun.coldata <- lun.coldata[m, ]
+
+## Construir la tabla de información de los genes
+lun.rowdata <- DataFrame(Length = gene.lengths)
+
+## Construir el objeto de SingleCellExperiment
+lun.sce <- SingleCellExperiment(
+  assays = list(assays = lun.counts),
+  colData = lun.coldata,
+  rowData = lun.rowdata
+)
+
+## Revisar el objeto que acabamos de construir
+lun.sce
+
+'''
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
