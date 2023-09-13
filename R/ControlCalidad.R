@@ -47,3 +47,26 @@ sce.416b <- addPerCellQC(sce.416b,
 
 ## Generar una gráfica de boxplots del número de genes por bloque (block) de células
 with(colData(sce.416b), boxplot(detected ~ block))
+
+
+### Gráficas sobre medidas de control de calidad (QC) ###
+
+## Grafico de dispersion de la relación entre los valores en "block" (x) y "detected" (y)
+plotColData(sce.416b, x = "block", y = "detected")
+
+## Grafico de dispersion de la relación entre los valores en "block" (x) y "detected" (y)
+## aplicando una escala logarítmica
+plotColData(sce.416b, x = "block", y = "detected") +
+  scale_y_log10()
+
+## Grafico de dispersion de la relación entre los valores en "block" (x) y "detected" (y)
+## usando la variable "phenotype" para distinguir los puntos
+## aplicando una escala logarítmica
+## y dividido en paneles según el fenotipo ("phenotype")
+plotColData(sce.416b,
+            x = "block",
+            y = "detected",
+            other_fields = "phenotype"
+) +
+  scale_y_log10() +
+  facet_wrap(~phenotype)
