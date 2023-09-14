@@ -70,3 +70,21 @@ plotColData(sce.416b,
 ) +
   scale_y_log10() +
   facet_wrap(~phenotype)
+
+
+### Ejercicio: gráficas QC ERCC ###
+
+## Adaptar el código de las gráficas anteriores para otras variable de control de calidad
+
+## Grafico de dispersion de la relación entre los valores en "block" (x) y "altexps_ERCC_percent" (y)
+plotColData(sce.416b, x = "block", y = "altexps_ERCC_percent")
+
+## Grafico de dispersion de la relación entre los valores en "block" (x) y "altexps_ERCC_percent" (y)
+## usando la variable "phenotype" para distinguir los puntos
+## y dividido en paneles según el fenotipo ("phenotype")
+plotColData(sce.416b,
+            x = "block",
+            y = "altexps_ERCC_percent",
+            other_fields = "phenotype"
+) +
+  facet_wrap(~phenotype)
