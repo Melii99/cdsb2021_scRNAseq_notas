@@ -110,7 +110,7 @@ DataFrame(
 
 ## Usando isOutlier() para determinar los valores de corte (scatter::isOutlier)
 
-qc.lib2 <- isOutlier(sce.416b$sum, log = TRUE, type = "lower") # Suma  de recuentos de expresión génica
+qc.lib2 <- isOutlier(sce.416b$sum, log = TRUE, type = "lower") # Suma  de recuentos de expresión génica (lecturas)
 
 qc.nexprs2 <- isOutlier(sce.416b$detected, # Genes detectados
                         log = TRUE,
@@ -251,3 +251,89 @@ plotColData(
 # (solo de los donadores C17, D2 y D7) para isOutlayer() permite calcular mejor los
 # verdaderos outlayers, pues el método asume que la mayoría de las células son de
 # buena calidad, y al usar también a los donadores D10 y D3 obtenemos un corte más laxo.
+
+
+### Gráficas de QC extra ###
+
+## Otras grafica que se pueden hacer
+
+## Agregar información sobre que células que tienen valores extremos (outliers)
+sce.416b$discard <- discard2
+
+## Hacer una gráfica para cada medida de control de calidad (QC)
+
+## Gráfica QC de las lecturas detectadas de sce.416b por bloque y por fenotipo
+## coloreada según si son o no valores extremos
+## aplicando una escala logarítmica
+plotColData(
+  sce.416b,
+  x = "block",
+  y = "sum",
+  colour_by = "discard",
+  other_fields = "phenotype"
+) +
+  facet_wrap(~phenotype) +
+  scale_y_log10()
+
+## Gráfica QC de los genes detectados de sce.416b por bloque y por fenotipo
+## coloreada según si son o no valores extremos
+## aplicando una escala logarítmica
+plotColData(
+  sce.416b,
+  x = "block",
+  y = "detected",
+  colour_by = "discard",
+  other_fields = "phenotype"
+) +
+  facet_wrap(~phenotype) +
+  scale_y_log10()
+
+## Gráfica QC del porcentaje de ERCC de sce.416b por bloque y por fenotipo
+## coloreada según si son o no valores extremos
+plotColData(
+  sce.416b,
+  x = "block",
+  y = "altexps_ERCC_percent",
+  colour_by = "discard",
+  other_fields = "phenotype"
+) +
+  facet_wrap(~phenotype)
+
+## Gráfica QC del porcentaje de lecturas mitocondriales de sce.416b por bloque y por fenotipo
+## coloreada según si son o no valores extremos
+plotColData(
+  sce.416b,
+  x = "block",
+  y = "subsets_Mito_percent",
+  colour_by = "discard",
+  other_fields = "phenotype"
+) +
+  facet_wrap(~phenotype)
+
+
+## Otra gráfica de diagnóstico útil
+plotColData(
+  sce.416b,
+  x = "sum",
+  y = "subsets_Mito_percent",
+  colour_by = "discard",
+  other_fields = c("block", "phenotype")
+) +
+  facet_grid(block ~ phenotype)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
