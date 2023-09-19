@@ -322,18 +322,24 @@ plotColData(
   facet_grid(block ~ phenotype)
 
 
+### Ejercicio: ERCC Grun et al ###
 
 
+## Adaptar el código de sce.416b para los datos de Grun et al y reproducir la imagen
+# Fíjate en que variables de colData() estamos graficando.
+# ¿Existe la variable discard en colData()?
+# ¿Qué variable tiene valores de D10, D17, D2, D3 y D7?
 
+## Agregar la información de las células filtradas (crear discard en colData)
+sce.grun$discard <- discard.ercc2
 
-
-
-
-
-
-
-
-
-
-
-
+## Grafica de ERCC_detected vs ERCC_sum
+## Coloreada segun si es un outlier o no
+## y paneles separados para cada valor único de "donor" (D10, D17, D2, D3 y D7)
+plotColData(sce.grun,
+            x = "altexps_ERCC_detected",
+            y = "altexps_ERCC_sum",
+            colour_by = "discard",
+            other_fields = "donor"
+            ) +
+  facet_grid(~ donor)
