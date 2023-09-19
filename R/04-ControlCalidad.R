@@ -343,3 +343,95 @@ plotColData(sce.grun,
             other_fields = "donor"
             ) +
   facet_grid(~ donor)
+
+
+### Identificando droplets vacíos con datos de PBMC ###
+
+## Opciones algorítmicas para detecar los droplets vacíos ##
+
+## Descargar los datos
+library("BiocFileCache")
+
+bfc <- BiocFileCache()
+raw.path <-
+  bfcrpath(
+    bfc,
+    file.path(
+      "http://cf.10xgenomics.com/samples",
+      "cell-exp/2.1.0/pbmc4k/pbmc4k_raw_gene_bc_matrices.tar.gz"
+    )
+  )
+
+untar(raw.path, exdir = file.path(tempdir(), "pbmc4k")) # Extraer
+
+## Leer los datos en R
+library("DropletUtils")
+library("Matrix")
+
+fname <- file.path(tempdir(), "pbmc4k/raw_gene_bc_matrices/GRCh38")
+sce.pbmc <- read10xCounts(fname, col.names = TRUE)
+bcrank <- barcodeRanks(counts(sce.pbmc)) # Cálculo de ranking a partir de counts
+
+## Obtener los valores únicos (no repetidos)
+uniq <- !duplicated(bcrank$rank)
+
+## Graficar los UMIs en log. base 10
+## indicando los valores de corte (knee y punto de inflexión)
+plot(
+  bcrank$rank[uniq],
+  bcrank$total[uniq],
+  log = "xy",
+  xlab = "Rank",
+  ylab = "Total UMI count",
+  cex.lab = 1.2
+)
+abline(
+  h = metadata(bcrank)$inflection,
+  col = "darkgreen",
+  lty = 2
+)
+abline(
+  h = metadata(bcrank)$knee,
+  col = "dodgerblue",
+  lty = 2
+)
+legend(
+  "bottomleft",
+  legend = c("Inflection", "Knee"),
+  col = c("darkgreen", "dodgerblue"),
+  lty = 2,
+  cex = 1.2
+)
+
+## Se pueden encontrar los droplets vacíos usando emptyDrops() !!!
+
+## Usando DropletUtils para encontrar los droplets
+set.seed(100)
+e.out <- emptyDrops(counts(sce.pbmc)) # Detectar empty droplets y guardar objeto
+
+#e.out (objeto emptyDrops) incluye FDR (false discovery rate)
+
+## Revisar emptyDrops para una explicación de porque hay valores NA
+summary(e.out$FDR <= 0.001) #Cuales tienen un FDR menor al .001
+
+
+## R. La función asume que cuentas UMI menores al valor "lower" ya son droplets vacios
+## y no calcula nada
+
+
+## Otra vez usamos emptyDrops ahora especificando un límite menor
+set.seed(100)
+limit <- 100 # Especificar limite (menor)
+# test.ambient=TRUE indica que queremos resultados también para los barcodes con valor igual o menor a "lower"
+all.out <- emptyDrops(counts(sce.pbmc), lower = limit, test.ambient = TRUE)
+
+# Idealmente, este histograma debería verse uniforme.
+# Picos grandes cerca de cero indican que los _barcodes_
+# con un número total de cuentas menor a "lower" no son
+# de origen ambiental.
+hist(all.out$PValue[all.out$Total <= limit &
+                      all.out$Total > 0],
+     xlab = "P-value",
+     main = "",
+     col = "grey80"
+)
