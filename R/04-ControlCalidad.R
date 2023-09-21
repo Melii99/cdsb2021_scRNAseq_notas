@@ -367,10 +367,13 @@ untar(raw.path, exdir = file.path(tempdir(), "pbmc4k")) # Extraer
 ## Leer los datos en R
 library("DropletUtils")
 library("Matrix")
+library("scater")
 
 fname <- file.path(tempdir(), "pbmc4k/raw_gene_bc_matrices/GRCh38")
 sce.pbmc <- read10xCounts(fname, col.names = TRUE)
 bcrank <- barcodeRanks(counts(sce.pbmc)) # Cálculo de ranking a partir de counts
+
+sce.pbmc <- addPerCellQC(sce.pbmc) # añadir metricas de calidad
 
 ## Obtener los valores únicos (no repetidos)
 uniq <- !duplicated(bcrank$rank)
@@ -435,3 +438,158 @@ hist(all.out$PValue[all.out$Total <= limit &
      main = "",
      col = "grey80"
 )
+
+## ¿Por qué emptyDrops() regresa valores NA?
+#R. La función no calcula nada para UMIs con valor igual o menor a "lower"
+## ¿Los valores p son iguales entre e.out y all.out? R. No (NAs)
+## ¿Son iguales si obtienes el subconjunto de valores que no son NA? R. Si
+
+
+### Filtrado de expresión mitocondrial adicional ###
+
+''' Falta obtener sce.pbmc$subsets_MT_percent
+
+## Después de filtar los droplets, el filtrado por expresión mitocondrial ayuda
+## a eliminar células de baja calidad.
+
+
+## FDR menor o igual a 0.001 en e.out (al menos una célula)
+sce.pbmc <- sce.pbmc[, which(e.out$FDR <= 0.001)]
+
+## Identificar genes mitocondriales en sce.pbmc y almacena los índices  en is.mito
+is.mito <- grep("^MT-", rowData(sce.pbmc)$Symbol)
+
+## Busqueda de outlayers (con isOutlier) para el subconjunto mitocondrial de sce.pbmc
+discard.mito <- isOutlier(sce.pbmc$subsets_MT_percent, type = "higher")
+
+## Gráficar del número total de lecturas y el porcentaje mitocondrial
+plot(
+  sce.pbmc$sum,
+  sce.pbmc$subsets_MT_percent,
+  log = "x",
+  xlab = "Total count",
+  ylab = "Mitochondrial %"
+)
+abline(h = attr(discard.mito, "thresholds")["higher"], col = "red")
+
+
+### Ejercicio avanzado ###
+
+# Volvamos a crear sce.pbmc para poder usar plotColData() y visualizar la relación entre total
+# y los niveles de expresión mitocondrial (en porcentaje) separando lo que pensamos que son
+# droplets vacíos y las células de acuerdo a los resultados que ya calculamos de emptyDrops().
+# El resultado final se verá como en la siguiente imagen.
+
+## Leer los datos en R
+library("DropletUtils")
+library("Matrix")
+library("scater")
+
+fname <- file.path(tempdir(), "pbmc4k/raw_gene_bc_matrices/GRCh38")
+sce.pbmc <- read10xCounts(fname, col.names = TRUE)
+bcrank <- barcodeRanks(counts(sce.pbmc)) # Cálculo de ranking a partir de counts
+
+## Obtener los valores únicos (no repetidos)
+uniq <- !duplicated(bcrank$rank)
+
+## Usando DropletUtils para encontrar los droplets
+set.seed(100)
+e.out <- emptyDrops(counts(sce.pbmc)) # Detectar empty droplets y guardar objeto
+
+## Filtrar los NAs
+e.out <- e.out[!is.na(e.out$FDR), ]
+
+## Añadir metricas de calidad
+sce.pbmc <- addPerCellQC(sce.pbmc)
+
+# Grafica
+plotColData(
+  sce.pbmc,
+  x = "total",
+  y = "subsets_MT_percent",
+  colour_by = "discard",
+  other_fields = "phenotype"
+) +
+  facet_grid(~ sce.pbmc$is_cell)
+
+'''
+
+### Discusión ¿Conviene eliminar datos? ###
+
+# Eliminemos las células de calidad baja
+# al quedarnos con las columnas del objeto sce que NO
+# queremos descartar (eso hace el !)
+filtered <- sce.416b[, !discard2]
+# Alternativamente, podemos marcar
+# las células de baja calidad
+marked <- sce.416b
+marked$discard <- discard2
+
+## ¿Cúal de estos objetos es más grande?
+# R. marked es más grande, se le está añadiendo una nueva columna con discard2
+# mientras filtered es aún más pequeño que sce.416b
+## ¿Cúal prefieres usar? R. Es bueno usar el objeto marked para no perder información
+# (en caso de tener suficiente memoria, claro)
+
+### ExperimentSubset ###
+# Permite hacer varios subconjuntos de datos y mantenerlos en un sólo objeto para trabajar
+# con estos subsets (ej. original, filtrado, filtrado2... dentro de un mismo objeto)
+
+
+### Explorando datos de forma interactiva con iSEE ###
+
+## CRear un objeto sencillo de tipo RangedSummarizedExperiment
+library("SummarizedExperiment")
+
+## Crear los datos para nuestro objeto de tipo SummarizedExperiment
+## para 200 genes a lo largo de 6 muestras
+nrows <- 200
+ncols <- 6
+
+## Números al azar de cuentas
+set.seed(20210223)
+counts <- matrix(runif(nrows * ncols, 1, 1e4), nrows)
+
+## Información de nuestros genes
+rowRanges <- GRanges(
+  rep(c("chr1", "chr2"), c(50, 150)),
+  IRanges(floor(runif(200, 1e5, 1e6)), width = 100),
+  strand = sample(c("+", "-"), 200, TRUE),
+  feature_id = sprintf("ID%03d", 1:200)
+)
+names(rowRanges) <- paste0("gene_", seq_len(length(rowRanges)))
+
+## Información de nuestras muestras
+colData <- DataFrame(
+  Treatment = rep(c("ChIP", "Input"), 3),
+  row.names = LETTERS[1:6]
+)
+
+## Juntar toda la información en un solo objeto de R
+rse <- SummarizedExperiment(
+  assays = SimpleList(counts = counts),
+  rowRanges = rowRanges,
+  colData = colData
+)
+
+## Explorar el objeto resultante
+rse
+
+## Explorar el objeto rse de forma interactiva
+library("iSEE")
+
+if (interactive()) {
+  iSEE::iSEE(rse)
+}
+
+## Explorar el objeto sce.416b de forma interactiva
+if (interactive()) {
+  iSEE::iSEE(sce.416b, appTitle = "sce.416b")
+}
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
