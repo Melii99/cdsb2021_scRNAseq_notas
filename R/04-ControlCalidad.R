@@ -373,8 +373,6 @@ fname <- file.path(tempdir(), "pbmc4k/raw_gene_bc_matrices/GRCh38")
 sce.pbmc <- read10xCounts(fname, col.names = TRUE)
 bcrank <- barcodeRanks(counts(sce.pbmc)) # Cálculo de ranking a partir de counts
 
-sce.pbmc <- addPerCellQC(sce.pbmc) # añadir metricas de calidad
-
 ## Obtener los valores únicos (no repetidos)
 uniq <- !duplicated(bcrank$rank)
 
@@ -447,7 +445,7 @@ hist(all.out$PValue[all.out$Total <= limit &
 
 ### Filtrado de expresión mitocondrial adicional ###
 
-''' Falta obtener sce.pbmc$subsets_MT_percent
+##################### Falta obtener sce.pbmc$subsets_MT_percent
 
 ## Después de filtar los droplets, el filtrado por expresión mitocondrial ayuda
 ## a eliminar células de baja calidad.
@@ -499,8 +497,13 @@ e.out <- emptyDrops(counts(sce.pbmc)) # Detectar empty droplets y guardar objeto
 ## Filtrar los NAs
 e.out <- e.out[!is.na(e.out$FDR), ]
 
-## Añadir metricas de calidad
-sce.pbmc <- addPerCellQC(sce.pbmc)
+## Identificar genes mitocondriales en sce.pbmc y almacena los índices  en is.mito
+is.mito <- grep("^MT-", rowData(sce.pbmc)$Symbol)
+
+## Busqueda de outlayers (con isOutlier) para el subconjunto mitocondrial de sce.pbmc
+discard.mito <- isOutlier(sce.pbmc$subsets_MT_percent, type = "higher")
+
+########
 
 # Grafica
 plotColData(
@@ -511,8 +514,6 @@ plotColData(
   other_fields = "phenotype"
 ) +
   facet_grid(~ sce.pbmc$is_cell)
-
-'''
 
 ### Discusión ¿Conviene eliminar datos? ###
 
