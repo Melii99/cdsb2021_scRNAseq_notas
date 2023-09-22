@@ -27,6 +27,7 @@
 ### Dataset zeisel ###
 
 library("scRNAseq")
+library("scater")
 
 ## Cargar los datos en R
 sce.zeisel <- ZeiselBrainData(ensembl = TRUE)
@@ -203,3 +204,58 @@ summary(deconv.sf.zeisel)
 
 ## Si obtienes factores negativos intenta variar el número de clusters, checa si
 ## incrementar el número de células por cluster te dan factores positivos.
+
+
+### Transformación logarítmica ###
+
+## En una escala logaritmica las diferencias entre la expresión de genes
+## pueden verse mejor (más claramente comparables, ver diferencias sutiles)
+## Ej. ¿Qué gen es más interesante?
+
+## Gen X: el promedio de expresión en el tipo celular A: 50 y B: 10
+50 - 10
+log(50) - log(10)
+
+## Gen Y: el promedio de expresión en el tipo celular A: 1100 y B: 1000
+1100 - 1000
+log(1100) - log(1000)
+
+
+## Una vez calculados los factores de normalización con computeSumFactors(),
+## podemos calular las cuentas en escala logaritmica usando logNormCounts().
+
+## Los valores resultantes son valores de expresión normalizados transformados
+## en escala logarítmica.
+
+## Normalización de los datos
+# Normalization
+# set.seed(100)
+# clust.zeisel <- quickCluster(sce.zeisel)
+# sce.zeisel <- computeSumFactors(sce.zeisel, cluster=clust.zeisel, min.mean=0.1)
+
+## Log transformation (las cuentas normalizadas se guardan en assays como logcounts)
+sce.zeisel <- scater::logNormCounts(sce.zeisel)
+assayNames(sce.zeisel)
+
+
+### Ejercicio: Transformación logarítmica ###
+
+## ¿Qué es una pseudo-cuenta? R. Un número que se agrega para obtener el logaritmo
+## ¿Porqué se usa? R. para evitar errores con log(0) (log(0) = -Inf)
+## ¿Qué valor de pseudo-cuenta usa logNormCounts()? R. pseudo.count = 1
+
+
+### Funciones interesantes para después de normalizar ###
+
+## PCA de las cuentas de los datos de expresión génica del sce sce.zeisel
+sce.zeisel <- runPCA(sce.zeisel)
+## Graficar PC1 PC2
+plotPCA(sce.zeisel, colour_by = "level1class")
+## Graficar el  Relative Log Expression (RLE) (distribución de las diferencias en la expresión)
+plotRLE(sce.zeisel, exprs_values = "logcounts", colour_by = "level1class")
+
+
+
+
+
+
