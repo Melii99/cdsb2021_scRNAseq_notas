@@ -113,14 +113,93 @@ identical(lib.sf.zeisel, lib_size_factors)
 
 ## Para análisis exploratorios, la precisión de la normalización no es un punto
 ## mayor a considerar. El sesgo por composición normalmente no afecta la separación
-## de los clusters, solo la magnitud.
+## de los clusters, solo la magnitud (suele ser suficiente para la exploración).
 
 ## La normalización por Library Size factor suele ser suficiente en algunas ocasiones
 ##donde se busca identificar clusters y los marcadores de los clusters.
 
 
 
+### Normalización por decircunvolución (deconvolution) ###
+
+## Un sesgo técnico que es importante considerar es el sesgo
+## de composición del transcriptoma (RNA)
+## EJ. un gen X (o grupo de genes) se expresa en mayor cantidad en la célula A
+## comparado a la célula B. Esto significa que más recursos fueron tomados por el
+## gen X, disminuyendo la covertura de los demás
+
+## En bulk RNA-seq Se assume que la mayoría de genes no estarán DE entre las muestras
+##  y cualquier diferencia entre los genes non-DE representa un sesgo el cual se
+## remueve (calculando un factor de normalización)
+
+## En la Normalización por decircunvolución las células se
+
+## Normalización por decircunvolución (deconvolution)
+library("scran")
+
+## Pre-clustering
+set.seed(100)
+clust.zeisel <- quickCluster(sce.zeisel)
+
+## Calcular factores de tamaño para la decircunvolución (deconvolution)
+deconv.sf.zeisel <- calculateSumFactors(sce.zeisel, clusters = clust.zeisel, min.mean = 0.1)
+
+## Examinar la distribución de los factores de tamaño
+summary(deconv.sf.zeisel)
+
+## Graficar los Deconvolution size factors
+hist(log10(deconv.sf.zeisel),
+     xlab = "Log10[Deconvolution size factor]",
+     col = "grey80"
+)
+
+## Comparar los factores de normalización (size factors) obtenidos por
+## escalamiento (lib.sf.zeisel) y deconvolution (deconv.sf.zeisel)
+plot(lib.sf.zeisel,
+     deconv.sf.zeisel,
+     xlab = "Library size factor",
+     ylab = "Deconvolution size factor",
+     log = "xy",
+     pch = 16
+)
+abline(a = 0, b = 1, col = "red")
 
 
+### Ejercicios: deconvolution ###
 
+## ¿Cúantos clusters rápidos obtuvimos? R. 12 clusters
+levels(clust.zeisel)
 
+## ¿Cúantas células por cluster obtuvimos?
+## R. 113, 123, 140, 224, 231, 243, 252, 259, 281, 300, 324, 325
+cells_cluster <- sort(table(clust.zeisel))
+cells_cluster
+barplot(cells_cluster)
+
+## ¿Cúantos clusters rápidos obtendríamos si cambiamos el tamaño mínimo a 200?
+## Usa 100 como la semilla (seed). R. 10 clusters
+set.seed(100)
+sort(table(quickCluster(sce.zeisel, min.size = 200)))
+
+## ¿Cúantas líneas ves en la gráfica?
+plot(lib.sf.zeisel,
+     deconv.sf.zeisel,
+     xlab = "Library size factor",
+     ylab = "Deconvolution size factor",
+     log = "xy",
+     pch = 16,
+     col = as.integer(factor(sce.zeisel$level1class))
+)
+abline(a = 0, b = 1, col = "red")
+abline(a = -.2, b = 0.95, col = "red")
+abline(a = 0.08, b = 1, col = "red")
+
+## La normalización por decircunvolución (deconvolution) mejora los resultados
+## para análisis posteriores de una manera más precisa que los métodos para bulk RNA-seq.
+
+## scran algunas veces alcula factores negativos o ceros lo cual altera la matrix
+## de expresión normalizada. ¡Checa los factores que calculas!
+summary(deconv.sf.zeisel)
+
+## Si obtienes factores negativos intenta variar el número de clusters, checa si
+## incrementar el número de células por cluster te dan factores positivos.
