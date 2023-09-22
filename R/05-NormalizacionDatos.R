@@ -254,8 +254,8 @@ plotPCA(sce.zeisel, colour_by = "level1class")
 ## Graficar el  Relative Log Expression (RLE) (distribución de las diferencias en la expresión)
 plotRLE(sce.zeisel, exprs_values = "logcounts", colour_by = "level1class")
 
-
-
-
-
-
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
