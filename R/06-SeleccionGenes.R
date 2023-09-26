@@ -96,10 +96,78 @@ sce.pbmc <- logNormCounts(sce.pbmc)
 ## ¿Cómo determinamos cuáles eran los genes mitocondriales?
 ## R. A partir de la anotación usando EnsDb.Hsapiens.v86, y después seleccionando
 ## los genes correspondientes (location == "MT")
+
 ## ¿Cómo decidimos filtrar las células?
-## Para los resultados de emptyDrops() se fijó un límite de 0.1% FDR
+## R. Para los resultados de emptyDrops() se fijó un límite de 0.1% FDR
 ## y para el filtro de genes mito. se usó isOutlier-"higher", el cual
 ## utiliza como límite 3 desviaciones sobre la mediana (MAD).
+
 ## ¿Puedes explicar como normalizamos los datos?
-## Generando clusters (con quickCluster) y usandolos para calcular los factores
+## R. Generando clusters (con quickCluster) y usandolos para calcular los factores
 ## de normalización correspondientes (computeSumFactors)
+
+
+### Dataset ilustrativo: 416B ###
+
+## Línea celular de células mieloides progenitoras inmortalizadas de ratón usando SmartSeq2
+
+## Descarga de datos
+library(scRNAseq)
+
+sce.416b <- LunSpikeInData(which = "416b")
+sce.416b$block <- factor(sce.416b$block)
+
+## Anotación
+library(AnnotationHub)
+
+ens.mm.v97 <- AnnotationHub()[["AH73905"]]
+rowData(sce.416b)$ENSEMBL <- rownames(sce.416b)
+rowData(sce.416b)$SYMBOL <- mapIds(ens.mm.v97,
+                                   keys = rownames(sce.416b),
+                                   keytype = "GENEID", column = "SYMBOL"
+)
+
+rowData(sce.416b)$SEQNAME <- mapIds(ens.mm.v97,
+                                    keys = rownames(sce.416b),
+                                    keytype = "GENEID", column = "SEQNAME"
+)
+
+library(scater)
+
+rownames(sce.416b) <- uniquifyFeatureNames(
+  rowData(sce.416b)$ENSEMBL,
+  rowData(sce.416b)$SYMBOL
+)
+
+## Control de calidad (QC)
+mito <- which(rowData(sce.416b)$SEQNAME == "MT")
+
+stats <- perCellQCMetrics(sce.416b, subsets = list(Mt = mito))
+
+qc <- quickPerCellQC(stats,
+                     percent_subsets = c("subsets_Mt_percent", "altexps_ERCC_percent"),
+                     batch = sce.416b$block
+)
+
+sce.416b <- sce.416b[, !qc$discard]
+
+## Normalización
+library(scran)
+
+sce.416b <- computeSumFactors(sce.416b)
+sce.416b <- logNormCounts(sce.416b)
+
+### Preguntas de repaso ###
+
+## ¿Cómo determinamos cuáles eran los genes mitocondriales?
+## R. A partir de la anotación usando ens.mm.v9, y después seleccionando
+## los genes correspondientes (SEQNAME == "MT")
+
+## ¿Cómo decidimos filtrar las células?
+## R. Se generaron  QC metrics (perCellQCMetrics) para el subset de Mito. y después
+## obtener los porcentajes de expresión génica de mito y ERCC (quickPerCellQC) para
+## finalmente filtrar a partir de esos resultados
+
+## ¿Puedes explicar como normalizamos los datos?
+## R. Por escalamiento, utilizando computeSumFactors para obtener los factores de
+## normalización y haciendo una transformación logaritmica con logNormCounts
