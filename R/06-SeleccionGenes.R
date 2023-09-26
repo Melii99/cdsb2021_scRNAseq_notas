@@ -171,3 +171,67 @@ sce.416b <- logNormCounts(sce.416b)
 ## ¿Puedes explicar como normalizamos los datos?
 ## R. Por escalamiento, utilizando computeSumFactors para obtener los factores de
 ## normalización y haciendo una transformación logaritmica con logNormCounts
+
+
+
+### Cuantificando la varianza por gen ###
+
+## Varianza de los log-counts ##
+
+## Selección del feature basado en los log-counts (usadas en análisis posteriores)
+## La transformación log no logra la estabilización de la varianza perfecta,
+## así que se requiere modelar la relación de la varianza-media de los features
+
+
+## Enfoque simple: Calcular la varianza de los log-counts para cada gen (ignorando
+## grupos experimentales) y ordenar los genes del más-al-menos variable
+
+## Un enfoque más sofisticado: Se calcula la varianza de los log-counts para cada gen
+## (ignorando grupos experimentales), se modela la relación entre la media y la varianza
+## de los log-counts para estimar la variación técnica. Se estima la varianza
+## biológica sustrayendo la varianza técnica de la varianza total y se ordenan
+## los genes de la variable de mayor-a-menor biológicamente
+
+## Cálculo de la varianza con scran::modelGeneVar ##
+
+## Supuestos:
+## La abundancia de los perfiles de expresión de la mayoría de los genes están
+## dominados por el ruido aleatorio técnico.
+## Una tendencia representa un estimado del ruido técnico como una función de la abundancia
+## Así, es posible descomponer la varianza total de cada gen en un componente técnico y uno biológico
+## Genes con una gran varianza biológica son considerados interesantes
+
+## Varianza de las log-counts con scran::modelGeneVar
+library(scran)
+dec.pbmc <- modelGeneVar(sce.pbmc)
+
+## Visualizaciíon de la relación entre la media y la varianza
+fit.pbmc <- metadata(dec.pbmc)
+
+plot(fit.pbmc$mean, fit.pbmc$var,
+     xlab = "Mean of log-expression",
+     ylab = "Variance of log-expression"
+)
+
+curve(fit.pbmc$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+
+
+### Ejercicios ###
+
+## ¿Qué tipo de objeto nos regresó modelGeneVar()? R. DFrame
+
+## ¿dec.pbmc es una tabla? ¿O contiene mayor información? R. Es un data frame con
+## 33694 filas y 6 columnas y contiene más información dentro de metadata(dec.pbmc)
+
+## ¿Qué tipo de objeto es fit.pbmc y que objetos con nombres contiene?
+## R. Es una lista, y contiene "mean", "var", "trend" y "std.dev"
+
+## ¿Qué tipo de objeto es fit.pbmc$trend? R. función
+
+## ¿Donde podemos encontrar más detalles de esta función? R. ?fitTrendVar
+
+
+### Ordenando por genes más interesantes ###
+
+## Ordenamos los genes por mayor "varianza biológica" (más interensantes)
+dec.pbmc[order(dec.pbmc$bio, decreasing = TRUE), ]
