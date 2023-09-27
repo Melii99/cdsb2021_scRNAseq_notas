@@ -380,13 +380,118 @@ curve(metadata(dec.pois.pbmc)$trend(x),
 
 ## Se debe identificar los HGVs en cada batch y combinarlos en una única lista de HGVs
 
+## Verificar que existen batches ("block")
+names(colData(sce.416b))
 
 ## Modelo de la varianza de la expresión de los genes en relación con los ERCC
 ## con  modelGeneVarWithSpikes por bloque (evitar HVGs artificiales por batch effect)
-dec.block.416b <- modelGeneVarWithSpikes(sce.416b, "ERCC", block = sce.416b$block)
+dec.block.416b <- modelGeneVarWithSpikes(sce.416b, "ERCC",
+                                         block = sce.416b$block) # Usar parámetro block
 
 ## Ordenar los genes por "más interesantes" - mayor varianza
 dec.block.416b[order(dec.block.416b$bio, decreasing = TRUE), ]
 
 
 
+
+###  Seleccionando genes altamante variables (high-variable genes, HVGs) ###
+
+
+## Hasta ahora hemos ordenado los genes del más al menos interesantemente variable
+## ¿Qué tanto debemos de bajar en la lista para seleccionar nuestros HVGs?
+
+## Es difícil determinar el balance óptimo porque el rudio en un contexto podría
+## ser una señal útil en otro contexto, por ello existen varias estrategias:
+
+
+## Seleccionando HVGs sobre la métrica de varianza (bio) ##
+
+## La estrategia más simple es seleccionar los top-X genes con los valores más grandes
+## para la métrica relevante de varianza (Ej. top values of scran::modelGeneVar())
+
+## Pro: El usuario puede controlar directamente el número de HVGs
+## Contra: ¿Qué valor de X se debe usar?
+
+## Usar getTopHVGs para optener los genes más relevantes ##
+
+## Obteniendo los top 1000 genes con la mayor varianza encontrados por modelGeneVar()
+hvg.pbmc.var <- getTopHVGs(dec.pbmc, n = 1000) # Works with modelGeneVar() output
+str(hvg.pbmc.var)
+
+## Obteniendo los top 1000 genes con la mayor varianza encontrados por modelGeneVarWithSpikes()
+hvg.416b.var <- getTopHVGs(dec.spike.416b, n = 1000) # Works with modelGeneVarWithSpikes() output
+str(hvg.416b.var)
+
+## Obteniendo los top 1000 genes con la mayor varianza encontrados por
+## modelGeneVarWithSpikes() por batches
+hvg.pbmc.cv2 <- getTopHVGs(dec.cv2.pbmc, # Also works with modelGeneCV2()
+                           var.field = "ratio", n = 1000 # but note `var.field`
+)
+str(hvg.pbmc.cv2)
+
+## Estrategias para seleccionar X
+
+## Podemos asumir que, por ejemplo, 5% de los genes están diferencialmente expresados
+## Establece X como el 5% de los genes
+
+## Normalmente no conocemos el número de genes diferencialmente expresados desde antes,
+## por lo tanto, solo hemos cambiado un número arbitrario por otro número arbitrario
+
+
+### Seleccionando HVGs de acuerdo a su significancia estadística ###
+
+
+## Establecer un límite fijo en alguna métrica de significancia estadística.
+## Ej. p-value para cada gen: seleccionar todos los genes con un p-valor ajustado menor que 0.05
+
+## Recordatorio: las pruebas estadísticas siempre dependen del tamaño de la muestra
+
+## Pros: * Fácil de implementar * Menos predecible que la estrategia de los top-X
+## Contras: * Podría priorizar genes con significancia estadística fuerte
+## en vez de significancia biológica fuerte
+
+## Obteniendo los genes con un p-value ajustado menor a 0.05 encontrados por modelGeneVar()
+hvg.pbmc.var.2 <- getTopHVGs(dec.pbmc, fdr.threshold = 0.05) # Works with modelGeneVar() output
+str(hvg.pbmc.var.2)
+
+## Obteniendo los genes con un p-value ajustado menor a 0.05 encontrados por modelGeneVarWithSpikes()
+hvg.416b.var.2 <- getTopHVGs(dec.spike.416b, # Works with modelGeneVarWithSpikes() output
+                             fdr.threshold = 0.05
+)
+str(hvg.416b.var.2)
+
+## Obteniendo los genes con un p-value ajustado menor a 0.05 encontrados por
+##  modelGeneVarWithSpikes() por batches
+hvg.pbmc.cv2.2 <- getTopHVGs(dec.cv2.pbmc, # Also works with modelGeneCV2()
+                             var.field = "ratio", fdr.threshold = 0.05 # but note `var.field`
+)
+str(hvg.pbmc.cv2.2)
+
+
+
+### Seleccionando genes por arriba de la tendencia media-varianza ###
+
+## Selecciona todos los genes con una varianza biológica positiva
+
+## Este es un extremo del equilibrio sesgo-varianza que minimiza el sesgo con el
+## costo de maximizar el ruido
+
+## Funciona mejor si tenemos datasets altamente heterogeneos que contienen
+## muchos tipos celulares diferentes
+
+## Obteniendo los genes por arriba de la tendencia media-varianza encontrados por modelGeneVar()
+hvg.pbmc.var.3 <- getTopHVGs(dec.pbmc, var.threshold = 0) # Works with modelGeneVar() output
+str(hvg.pbmc.var.3)
+
+## Obteniendo los genes por arriba de la tendencia media-varianza encontrados por modelGeneVarWithSpikes()
+hvg.416b.var.3 <- getTopHVGs(dec.spike.416b, # Works with modelGeneVarWithSpikes() output
+                             var.threshold = 0
+)
+str(hvg.416b.var.3)
+
+## Obteniendo los genes por arriba de la tendencia media-varianza encontrados por
+##  modelGeneVarWithSpikes() por batches
+hvg.pbmc.cv2.3 <- getTopHVGs(dec.cv2.pbmc, # Also works with modelGeneCV2()
+                             var.field = "ratio", var.threshold = 1 # note `var.field` and value of `var.threshold`
+)
+str(hvg.pbmc.cv2.2)
