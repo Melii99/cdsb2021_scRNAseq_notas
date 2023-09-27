@@ -235,3 +235,56 @@ curve(fit.pbmc$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 
 ## Ordenamos los genes por mayor "varianza biológica" (más interensantes)
 dec.pbmc[order(dec.pbmc$bio, decreasing = TRUE), ]
+
+
+
+### Coeficiente de variación de las cuentas ###
+
+## El coeficiente de variación de las cuentas al cuadrado (CV2) es una alternativa
+## a la varianza de los log-counts (uso de desviación estándar)
+
+## Se calcula usando las cuentas en lugar de los log-counts !!!
+## CV es el ratio de la desviación estándar a la media y está muy relacionada con
+## el parámetro de dispersión de la distribución binomial negativa (edgeR y DESeq2)
+
+## Cálculo del Coeficiente de variación con modelGeneCV2 ##
+
+## Modela la relación de la media de la varianza cuando se considera la relevancia de cada gen
+## Asume que la mayoría de los genes contienen ruido aleatorio y que la tendencia
+## captura la mayoría de la variación técnica
+## Genes con un gran CV2 que se desvían fuertemente de la tendencia es probable que
+## representen genes afectados por la estructura biológica
+## Usa la proporción (en lugar de la diferencia) del CV2 a la tendencia
+
+
+## Coeficiente de variación con modelGeneCV2
+dec.cv2.pbmc <- modelGeneCV2(sce.pbmc)
+
+## Visuualizar la relación con la media
+fit.cv2.pbmc <- metadata(dec.cv2.pbmc)
+
+plot(fit.cv2.pbmc$mean, fit.cv2.pbmc$cv2,
+     log = "xy"
+)
+
+curve(fit.cv2.pbmc$trend(x),
+      col = "dodgerblue",
+      add = TRUE, lwd = 2
+)
+
+### GOrdenando los genes por coeficiente de variación ###
+
+## Ordenamos los genes "más interesantes" por su coeficiente de variación
+dec.cv2.pbmc[order(dec.cv2.pbmc$ratio, decreasing = TRUE), ]
+
+
+### Varianza de los log-counts vs coeficiente de variación ###
+
+## Generalmente se usa la varianza de los log-counts !!!
+
+## ## CV2 tiende a tener otorgar rangos altos a genes altamente variables (HGVs)
+## con bajos niveles de expresión
+## Éstos son dirigidos por una sobreregulación en subpoblaciones raras
+## Puede asignar un alto rango a genes que no son de nuestro interés con varianza baja absoluta
+## La variación descrita por el CV2 de las cuentas es menos relevante para los
+## procedimientos que operan en los log-counts
