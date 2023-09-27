@@ -272,7 +272,7 @@ curve(fit.cv2.pbmc$trend(x),
       add = TRUE, lwd = 2
 )
 
-### GOrdenando los genes por coeficiente de variación ###
+### Ordenando los genes por coeficiente de variación ###
 
 ## Ordenamos los genes "más interesantes" por su coeficiente de variación
 dec.cv2.pbmc[order(dec.cv2.pbmc$ratio, decreasing = TRUE), ]
@@ -362,3 +362,31 @@ plot(dec.pois.pbmc$mean, dec.pois.pbmc$total,
 curve(metadata(dec.pois.pbmc)$trend(x),
       col = "dodgerblue", add = TRUE
 )
+
+
+
+### Recordando propiedades de los datos de sce.416b ###
+
+## línea celular de células inmortalizadas mieloides progenitoras de ratón con SmartSeq2
+
+## cantidad constante de spike-in ERCC RNA se agregó a cada lisado celular antes
+## de la preparación de la librería
+
+
+### Considerando factores experimentales ###
+
+## Los datos que contienen múltiples batches, muy seguido presentan efecto de bloque
+## que pueden crear HGVs (genes altamente variables) artificiales !!!
+
+## Se debe identificar los HGVs en cada batch y combinarlos en una única lista de HGVs
+
+
+## Modelo de la varianza de la expresión de los genes en relación con los ERCC
+## con  modelGeneVarWithSpikes por bloque (evitar HVGs artificiales por batch effect)
+dec.block.416b <- modelGeneVarWithSpikes(sce.416b, "ERCC", block = sce.416b$block)
+
+## Ordenar los genes por "más interesantes" - mayor varianza
+dec.block.416b[order(dec.block.416b$bio, decreasing = TRUE), ]
+
+
+
