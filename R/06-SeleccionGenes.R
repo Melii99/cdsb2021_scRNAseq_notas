@@ -288,3 +288,77 @@ dec.cv2.pbmc[order(dec.cv2.pbmc$ratio, decreasing = TRUE), ]
 ## Puede asignar un alto rango a genes que no son de nuestro interés con varianza baja absoluta
 ## La variación descrita por el CV2 de las cuentas es menos relevante para los
 ## procedimientos que operan en los log-counts
+
+
+
+### Cuantificando el ruido técnico ###
+
+## Aunque ajustamos una línea de tendencia a todos los genes endógenos y asumimos
+## que la mayoría de los genes no están dominados por ruido técnico, en la práctica,
+## todos los genes expresados tienen algún nivel de variabilidad biológica
+
+## Es mejor que pensemos estos estimados como una variación técnica más la
+## variación biológica que no es interesante
+
+## Podemos revisar dos enfoques:
+## Cuando tenemos spike-ins
+## Cuando no tenemos spike-ins
+
+
+### Cuantificando el ruido técnico en presencia de spike-ins ###
+
+## scran::modelGeneVarWithSpikes Ajusta la tendencia solo con los spike-ins
+## (que deberían estar afectados solamente por variación técnica)
+
+## Modelo de la varianza de la expresión de los genes en relación con los ERCC
+dec.spike.416b <- modelGeneVarWithSpikes(sce.416b, "ERCC")
+
+## Ordenar los genes por "más interesantes" - mayor varianza
+dec.spike.416b[order(dec.spike.416b$bio, decreasing = TRUE), ]
+
+## Visualizar la varianza de la expresión de los genes en relación con los ERCC
+plot(dec.spike.416b$mean, dec.spike.416b$total,
+     xlab = "Mean of log-expression",
+     ylab = "Variance of log-expression"
+)
+
+fit.spike.416b <- metadata(dec.spike.416b)
+
+points(fit.spike.416b$mean, fit.spike.416b$var,
+       col = "red", pch = 16
+)
+
+curve(fit.spike.416b$trend(x),
+      col = "dodgerblue",
+      add = TRUE, lwd = 2
+)
+
+
+### Cuantificando el ruido técnico en ausencia de spike-ins ###
+
+## scran::modelGeneVarByPoisson Realiza asunciones estadísticas acerca del ruido
+## Las cuentas UMI típicamente muestran una variación cercana a Poisson si solo
+## consideramos ruido técnico de la preparación de las librerías y la secuenciación
+
+## modelGeneVarByPoisson() realiza simulaciones, por lo que necesitamos “ajustar
+## la “semilla” para obtener resultados reproducibles
+
+## modelGeneVarByPoisson() pueden también simular una variación binomial negativa
+## (variación de Poisson sobredispersada)
+
+## Cuantificando la varianza (cuantif. ruido técnico) asumiendo una distribución poisson
+set.seed(0010101)
+dec.pois.pbmc <- modelGeneVarByPoisson(sce.pbmc)
+
+## Ordenar los genes por "más interesantes" - mayor varianza
+dec.pois.pbmc[order(dec.pois.pbmc$bio, decreasing = TRUE), ]
+
+## Visualizar la varianza de la expresión de los genes obtenido por modelGeneVarByPoisson
+plot(dec.pois.pbmc$mean, dec.pois.pbmc$total,
+     pch = 16, xlab = "Mean of log-expression",
+     ylab = "Variance of log-expression"
+)
+
+curve(metadata(dec.pois.pbmc)$trend(x),
+      col = "dodgerblue", add = TRUE
+)
