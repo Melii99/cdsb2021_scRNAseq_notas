@@ -495,3 +495,40 @@ hvg.pbmc.cv2.3 <- getTopHVGs(dec.cv2.pbmc, # Also works with modelGeneCV2()
                              var.field = "ratio", var.threshold = 1 # note `var.field` and value of `var.threshold`
 )
 str(hvg.pbmc.cv2.2)
+
+
+### EJERCICIO: Dibujando los HVGs ###
+
+## Repetir la gráfica que muestra la tendencia de la relación media-varianza
+## (ejeX: media de la expresión, ejeY: varianza de la expresión) incluyendo la
+## línea de tendencia (obtenida con modelGeneVar, modelGeneVarWithSpikes, modelGeneCV2).
+## En esta gráfica, deberás colorear los puntos que corresponden a los HGVs obtenidos
+## con algunos de los enfoques revisados
+
+
+## Graficando los top 1000 genes con la mayor varianza encontrados por modelGeneVar()
+## en verde
+plot(fit.pbmc$mean, fit.pbmc$var,
+     xlab = "Mean of log-expression",
+     ylab = "Variance of log-expression"
+)
+points(fit.pbmc$mean[hvg.pbmc.var], fit.pbmc$var[hvg.pbmc.var], col = "green")
+curve(fit.pbmc$trend(x), col = "red", add = TRUE, lwd = 2)
+
+## Graficando los genes con un p-value ajustado menor a 0.05 encontrados por modelGeneVar()
+## en rosa
+plot(fit.pbmc$mean, fit.pbmc$var,
+     xlab = "Mean of log-expression",
+     ylab = "Variance of log-expression"
+)
+points(fit.pbmc$mean[hvg.pbmc.var.2], fit.pbmc$var[hvg.pbmc.var.2], col = "pink")
+curve(fit.pbmc$trend(x), col = "blue", add = TRUE, lwd = 2)
+
+## Graficando los genes por arriba de la tendencia media-varianza encontrados por modelGeneVar()
+## en marrón
+plot(fit.pbmc$mean, fit.pbmc$var,
+     xlab = "Mean of log-expression",
+     ylab = "Variance of log-expression"
+)
+points(fit.pbmc$mean[hvg.pbmc.var.3], fit.pbmc$var[hvg.pbmc.var.3], col = "brown")
+curve(fit.pbmc$trend(x), col = "orange", add = TRUE, lwd = 2)
