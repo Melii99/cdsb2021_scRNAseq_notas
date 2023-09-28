@@ -532,3 +532,63 @@ plot(fit.pbmc$mean, fit.pbmc$var,
 )
 points(fit.pbmc$mean[hvg.pbmc.var.3], fit.pbmc$var[hvg.pbmc.var.3], col = "brown")
 curve(fit.pbmc$trend(x), col = "orange", add = TRUE, lwd = 2)
+
+
+
+### Poniendo todo junto ###
+
+## Ej. Elegir el 10% de los genes con con componente biológico de mayor variacion
+dec.pbmc <- modelGeneVar(sce.pbmc)
+chosen <- getTopHVGs(dec.pbmc, prop = 0.1)
+str(chosen)
+
+## Después de esto tenemos varias opciones para imponer nuestra selección de HGVs
+## durante el resto del análisis:
+
+## Hacer un subset de SCE para quedarnos únicamente con los HGVs
+## Especificar los HGVs en funciones posteriores
+## Magia (altExps)
+
+
+
+###  Quedándonos sólo con los HGVs ###
+
+## Generar un subset con los HGVs elegidos
+sce.pbmc.hvg <- sce.pbmc[chosen, ]
+sce.pbmc.hvg
+
+## PRO: Te aseguras de que los métodos posteriores sólo usen estos genes para sus cálculos
+## CONTRA: Los genes no-HGVs son eliminados del nuevo objeto SingleCellExperiment,
+##lo cual hace menos conveniente la interrogación del dataset completo sobre genes que no son HGVs
+
+
+### Especificando los HGVs ###
+
+## Otra opción es mantener el objeto SingleCellExperiment original y especifica los
+## genes para usar en funciones posteriores mediante un argumento adicional como subset_row
+
+## PRO: Es útil si el análisis usa varios conjuntos de HGVs en diferentes pasos
+## CONTRA: Podría ser inconveniente especificar repetidamente el mismo conjunto de HGVs en diferentes pasos
+
+## Un ejemplo de cómo especificar los HVGs en análisis posteriores:
+## Análisis PCA usando sólo los HVGs elegidos
+library(scater)
+
+sce.pbmc <- runPCA(sce.pbmc, subset_row = chosen) # Se especifica usar solo los HGVs
+sce.pbmc
+
+
+### Usando alternative experiments: altExp ###
+
+## PRO: Evita algunos problemas a largo plazo cuando el dataset original no está
+## sincronizado con el conjunto filtrado por HVGs
+## CONTRA: Ralentiza todos los análisis subsecuentes
+
+## Agregar el SCE completo a el subset de datos del SCE
+altExp(sce.pbmc.hvg, "original") <- sce.pbmc
+
+## Nuevo SCE con el SCE original en altExp
+sce.pbmc.hvg
+
+## Objerto SCE original
+altExp(sce.pbmc.hvg, "original")
