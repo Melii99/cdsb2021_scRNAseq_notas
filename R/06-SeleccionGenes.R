@@ -593,6 +593,24 @@ sce.pbmc.hvg
 ## Objerto SCE original
 altExp(sce.pbmc.hvg, "original")
 
+
+
+### Recomendaciones ###
+
+## Para CEL-Seq2:
+scran::modelGeneVarWithSpikes()
+
+## Para 10X:
+scran::modelGeneVarByPoisson()
+
+## Si quieres irte por el lado de conservar demasiados genes:
+scran::getTopHVGs(dec, var.threshold=0)
+## Y realiza una comparación rápida con, por lo menos, el top-1000 HVGs
+## Regresa al paso de selección de HVG para eliminar genes problemáticos
+## tantas veces como sea necesario
+
+
+
 ### Información de la sesión de R ###
 Sys.time()
 proc.time()
