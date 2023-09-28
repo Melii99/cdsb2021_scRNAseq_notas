@@ -275,3 +275,76 @@ plot(choices$n.pcs, choices$n.clusters,
 )
 abline(a = 1, b = 1, col = "red")
 abline(v = chosen.clusters, col = "grey80", lty = 2)
+
+
+
+### Juntando todo ###
+
+set.seed(100)
+## Generar y almacenar el set completo de componentes principales  con los HVGs
+sce.zeisel <- runPCA(sce.zeisel, subset_row = top.zeisel)
+
+## También pueden seleccionarse un subset de componentes principales usando
+## el metodo del codo
+
+# library(PCAtools)
+# percent.var <- attr(reducedDim(sce.zeisel), "percentVar")
+# chosen.elbow <- PCAtools::findElbowPoint(percent.var)
+reducedDim(sce.zeisel, "PCA_elbow") <- reducedDim(
+  sce.zeisel, "PCA"
+)[, 1:chosen.elbow]
+
+## O seleccionar un subset de componentes principales usando métodos basados
+## en la estructura poblacional
+
+# choices <- getClusteredPCs(reducedDim(sce.zeisel))
+# chosen.clusters <- metadata(choices)$chosen
+reducedDim(sce.zeisel, "PCA_clusters") <- reducedDim(
+  sce.zeisel, "PCA"
+)[, 1:chosen.clusters]
+
+
+### Ejercicio: PCA de sce.pbmc ###
+
+## Realiza un PCA para los datos sce.pbmc.
+## Elige el número de PCs a conservar utilizando el método del codo
+## Elige el número de PCs a conservar utilizando la estructura de la población
+## Agrega esta información al objeto sce.pbmc
+
+
+## PCA de los topGenes obtenidos para sce.pbmc
+library(scran)
+library(scater)
+
+set.seed(100)
+sce.pbmc <- runPCA(sce.pbmc,
+                     subset_row = top.pbmc
+)
+
+## Encontrar el numero óptimo de PCs con el método del codo
+library(PCAtools)
+
+percent.var2 <- attr(reducedDim(sce.pbmc), "percentVar") # reducedDim()
+chosen.elbow2 <- PCAtools::findElbowPoint(percent.var2) # findElbowPoint()
+
+## Encontrar el numero óptimo de PCs utilizando la estructura de la población
+choices2 <- getClusteredPCs(reducedDim(sce.pbmc)) # getClusteredPCs()
+chosen.clusters2 <- metadata(choices2)$chosen
+
+## Agregar información del numero óptimo de PCs con el método del codo a sce.pbmc
+library(PCAtools)
+
+reducedDim(sce.pbmc, "PCA_elbow") <- reducedDim(
+  sce.pbmc, "PCA"
+)[, 1:chosen.elbow2]
+
+## Ver la información agregada
+head(reducedDim(sce.pbmc, "PCA_elbow"))
+
+## Agregar información del numero óptimo de PCs utilizando la estructura de la población a sce.pbmc
+reducedDim(sce.pbmc, "PCA_clusters") <- reducedDim(
+  sce.pbmc, "PCA"
+)[, 1:chosen.clusters2]
+
+## Ver la información agregada
+head(reducedDim(sce.pbmc, "PCA_clusters"))
