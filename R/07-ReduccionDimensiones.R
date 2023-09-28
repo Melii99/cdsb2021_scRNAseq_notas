@@ -152,4 +152,99 @@ sce.pbmc <- computeSumFactors(sce.pbmc, cluster = clusters)
 ## Transformación logarítmica
 sce.pbmc <- logNormCounts(sce.pbmc)
 
+## Modelado de la varianza ##
+
+set.seed(1001)
+## Modelado de la b¿varianza usando el supuesto de una distribución poisson
+dec.pbmc <- modelGeneVarByPoisson(sce.pbmc)
+
+## Obtenemos el  10% de los genes con mayor variación en expresión como HVGs
+top.pbmc <- getTopHVGs(dec.pbmc, prop = 0.1)
+
+
+
+### Análisis de Componentes Principales ###
+
+
+## Es el "arma principal" de la reducción de dimensionalidad
+## Descubre las combinaciones (lineales) de “features” que capturan la cantidad más grande de variación
+
+## En un PCA, la primer combinación lineal (componente principal) se elige tal que
+## permite capturar la mayor varianza a través de las células.
+## El siguiente PC se elige tal que es “ortogonal” al primero y captura la cantidad
+## más grande de la variación restante, y así sucesivamente
+
+
+## PCA aplicado a datos de scRNA-seq ##
+
+## Podemos realizar reducción de dimensionalidad al aplicar PCA en la matriz de cuentas transformadas
+## (log-counts matrix) y restringiendo los análisis posteriores a los primeros PCs (top PCs)
+
+## PROS:
+## Reducción de dimensiones sin perder demasiada información
+## La técnica de PCA tiene muchas propiedades teóricas bien estudiadas.
+## Hay varias formas rápidas de realizar PCA en datasets grandes.
+
+
+## Suposiciones de PCA aplicadas a los datos de scRNA-seq ##
+
+## Los procesos biológicos afectan múltiples genes en una manera coordinada
+
+## Los primeros PCs probablemente representan la estructura biológica dado que más
+## variación puede ser capturada considerando el comportamiento correlacionado de muchos genes
+
+## Se espera que el ruido técnico azaroso afecte cada gen independientemente
+
+## Consideración: Los primeros PCs capturarón “batch effects” (efectos de lote)
+## que afectan muchos genes en una manera coordinada
+
+
+## PCA con runPCA ##
+
+## Por default, runPCA() usa un método rápido aproximado que realiza simulaciones,
+##por lo tanto, es necesario ‘configurar la semilla’ para obtener resultados reproducibles
+
+## PCA de los topGenes obtenidos para zeisel
+library(scran)
+library(scater)
+
+set.seed(100)
+sce.zeisel <- runPCA(sce.zeisel,
+                     subset_row = top.zeisel
+)
+
+
+
+### Eligiendo el número de PCs ###
+
+
+## Esta elección en análoga a la elección del numero de HVGs.
+## Elegir más PCs evitará descartar señal biológica a expensas de retener más ruido
+
+## Es común seleccionar un número de PCs “razonable” pero arbitrario (10-50),
+## continuar con el análisis y regresar para checar la robustez de los resultados
+
+
+## Estrategias data-driven para seleccionar el número de PCs ##
+
+## Método del codo ##
+
+## Una heurística simple es elegir el número de PCs basado en el porcentaje de
+## varianza explicado por PCs sucesivos
+
+library(PCAtools)
+
+percent.var <- attr(reducedDim(sce.zeisel), "percentVar") # reducedDim()
+chosen.elbow <- PCAtools::findElbowPoint(percent.var) # findElbowPoint()
+
+## Graficar el porcentaje de la varianza explicada
+plot(percent.var, xlab = "PC", ylab = "Variance explained (%)")
+abline(v = chosen.elbow, col = "red")
+
+
+## Basados en la estructura de la población ##
+
+
+
+
 
