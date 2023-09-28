@@ -244,7 +244,34 @@ abline(v = chosen.elbow, col = "red")
 
 ## Basados en la estructura de la población ##
 
+## Esta es una aproximación heurística más sofisticada que usa el número de
+## cluster como un proxy del número de subpoblaciones
+
+## Supongamos que esperamos d subpoblaciones de células, en ese caso, necesitamos
+## d-1 dimensiones para garantizar la separación de todas las subpoblaciones
+
+## Pero en un escenario real realmente no sabes cuántas poblaciones hay !!!
+
+## Intentae con un rango para d y únicamente considera valores que produzcan a lo más d+1 clusters
+## Cuando se seleccionan más clusters con menos dimensiones se produce ‘overclustering’
+## Elegir una d que maximice el número de clusters sin caer en ‘overclustering’
 
 
+## PROS:
+## Es una solución pragmática que soluciona el equilibrio sesgo-varianza en los
+## análisis posteriores (especialmente clustering)
+
+## CONTRAS:
+## Hace suposiciones fuertes sobre la naturaleza de las diferencias biológicas entre
+##los clusters, y de hecho supone la existencia de clusters, los cuales podrían no
+## existir en procesos biológicos como la diferenciación
 
 
+choices <- getClusteredPCs(reducedDim(sce.zeisel))
+chosen.clusters <- metadata(choices)$chosen
+
+plot(choices$n.pcs, choices$n.clusters,
+     xlab = "Number of PCs", ylab = "Number of clusters"
+)
+abline(a = 1, b = 1, col = "red")
+abline(v = chosen.clusters, col = "grey80", lty = 2)
