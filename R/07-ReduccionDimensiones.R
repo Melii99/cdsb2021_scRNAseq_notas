@@ -413,3 +413,183 @@ denoised.zeisel <- denoisePCA(sce.zeisel,
 dim(reducedDim(denoised.zeisel))
 
 ## Los datos de cerebro de Zeisel están cerca de este límite superior: el ruido técnico es demasiado bajo
+
+
+
+### Reducción de dimensionalidad para visualización ###
+
+## Clustering y otros algoritmos operaran fácilmente sobre 10-50 (a lo más) PCs,
+## pero ese número es aún demasiado para la visualización
+
+## Por lo tanto, necesitamos estrategias adicionales para la reducción de
+## dimensionalidad si queremos visualizar los datos
+
+
+
+### Visualizando con PCA ###
+
+## PCA es una técnica lineal, por lo tanto, no es eficiente para comprimir
+## diferencias en más de 2 dimensiones en los primeros 2 PCs
+
+## Visualizar PC1 y PC2 del PCA de zeisel
+plotReducedDim(sce.zeisel, dimred = "PCA")
+
+## Visualizar PC1 y PC2 del PCA de zeisel coloreando los clusters por level1class
+## (tipo celular)
+plotReducedDim(sce.zeisel,
+               dimred = "PCA",
+               colour_by = "level1class"
+)
+
+
+## Retos y resumen de la visualización con PCA ##
+
+## PROS:
+## PCA es predecible y no introducirá estructura aritficial en los datos.
+## Es determínistico y robusto a cambios pequeños en los valores de entrada.
+
+## CONTRAS:
+## Usualmente no la visualización no es suficiente para visualizar la naturaleza
+## compleja de los datos de scRNA-seq
+
+plotReducedDim(sce.zeisel,
+               dimred = "PCA",
+               ncomponents = 4, colour_by = "level1class"
+)
+
+
+### Visualización con t-SNE ###
+
+## t-stochastic neighbour embedding (t-SNE) es la visualización por excelencia
+## de datos de scRNA-seq. Intenta encontrar una representación (no-lineal) de los
+## datos usando pocas dimensiones que preserve las distancias entre cada punto y
+## sus vecinos en el espacio multi-dimensional
+
+set.seed(00101001101)
+sce.zeisel <- runTSNE(sce.zeisel, dimred = "PCA")
+plotReducedDim(sce.zeisel, dimred = "TSNE", colour_by = "level1class")
+
+##  Retos de la visualización con t-SNE ##
+
+set.seed(100)
+sce.zeisel <- runTSNE(sce.zeisel,
+                      dimred = "PCA",
+                      perplexity = 30 # número de vecinos cercanos aconsiderar
+)
+
+plotReducedDim(sce.zeisel,
+               dimred = "TSNE",
+               colour_by = "level1class"
+)
+
+
+
+## Preguntas ##
+
+## ¿Qué pasa si vuelves a correr runTSNE() sin especificar la semilla?
+## R. el resultado es aleatorio
+## ¿Qué pasa si especificas la semilla pero cambias el valor del parámetro perplexity?
+## R. el numero de vecinos a considerar cambia y por ende también el resultado
+
+## Ajustando la perplejidad de tSNE
+
+set.seed(100)
+
+sce.zeisel <- runTSNE(sce.zeisel, dimred = "PCA", perplexity = 5)
+p1 <- plotReducedDim(sce.zeisel, dimred = "TSNE", colour_by = "level1class")
+
+sce.zeisel <- runTSNE(sce.zeisel, dimred = "PCA", perplexity = 20)
+p2 <- plotReducedDim(sce.zeisel, dimred = "TSNE", colour_by = "level1class")
+
+sce.zeisel <- runTSNE(sce.zeisel, dimred = "PCA", perplexity = 80)
+p3 <- plotReducedDim(sce.zeisel, dimred = "TSNE", colour_by = "level1class")
+
+library("patchwork")
+p1 + p2 + p3
+
+
+## Una perplejidad alta permite mejor representación de estructuras globales,
+## especialmente para datos que tienen múltiples escalas y estructuras a diferentes distancias.
+
+## Selección de parámetros para t-SNE con cierta profundidad:
+
+## Algunos componentes aleatorios y la selección de parámetros cambiarán la visualización
+## La interpretación puede ser engañada por el tamaño y posición de los clusters
+## t-SNE infla clusters densos y comprime clusters escasos
+## t-SNE no está obligado a preservar las localizaciones relativas de clusters no-vecinos (no puedes interpretar distancias no locales)
+
+## Aún así: t-SNE es una herramienta probada para visualización general de datos de
+## scRNA-seq y sigue siendo muy popular
+
+
+
+### Visualización con UMAP ###
+
+## Uniform manifold approximation and project (UMAP) es una alternativa a t-SNE
+
+## Así como t-SNE, UMAP intenta encontrar una representación (no lineal) de pocas d
+## imensiones de los datos que preserve las distancias entre cada puntos y sus vecinos
+## en el espacio multi-dimensional
+
+## t-SNE y UMAP están basados en diferentes teorías matemáticas
+
+set.seed(100)
+sce.zeisel <- runUMAP(sce.zeisel,
+                      dimred = "PCA",
+                      n_neighbors = 15
+)
+plotReducedDim(sce.zeisel,
+               dimred = "UMAP",
+               colour_by = "level1class"
+)
+
+
+## Comparado con t-SNE: ##
+
+## UMAP tiende a encontrar clusters visualmente más compactos
+## Intenta preservar más de la estructura global que t-SNE
+## Tiende a ser más rápido que t-SNE, lo cual puede ser importante para datasets grandes.
+## La diferencia desaparece cuando se aplican sobre los primeros PCs
+
+
+## Retos de la visualización con UMAP ##
+
+## gual que para t-SNE, es necesario configurar una semilla y diferentes valores
+## para los parámetros cambiarón la visualización
+
+## Si el valor para los parámetros n_neighbors o min_dist es demasiado bajo entonces
+## el ruido aleatorio se interpretará como estructura de alta-resolución,
+## si son demasiado altos entonces se perderá la estructura fina
+
+## TIP: Trata un rango de valores para cada parámetro para asegurarte de que no
+## comprometen ninguna de las conclusiones derivadas de la gráfica UMAP o t-SNE
+
+
+## Preguntas ##
+
+## ¿Qué pasa si vuelves a correr runUMAP() sin especificar la semilla?
+## R. Al igual que tSNE los resultados son aleartorios y cambila visualización
+## ¿Qué pasa si especificas la semilla pero cambias el valor del parámetro n_neighbors?
+## R. R. el numero de vecinos a considerar cambia y por ende también el resultado
+
+
+
+### Interpretación de la visualización ###
+
+## Reducción de dimensionalidad para la visualización de los datos necesariamente #
+## involucra descartar información y distorsionar las distancias entre las células
+
+## No sobre interpretes las gráficas bonitas !!!
+
+
+### Resumen y recomendaciones ###
+
+## Las gráficas de t-SNE y UMAP son herramientas diagnóstico importantes, por ejemplo:
+## para checar si dos clusters son realmente subclusters vecinos o si un cluster puede
+## ser dividido en más de un cluster
+
+## Es debatible cual visualización, t-SNE o UMAP, es más útil o estáticamente agradable.
+
+## Está bien elegir aquella que funcione mejor para tu análisis (tomando en cuenta
+## que tratarás la gráfica únicamente como una herramienta de visualización/diagnóstico
+## y que no llegarás a ninguna conclusión fuerte basado únicamente en la gráfica )
