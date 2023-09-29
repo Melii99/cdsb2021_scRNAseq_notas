@@ -593,3 +593,11 @@ plotReducedDim(sce.zeisel,
 ## Está bien elegir aquella que funcione mejor para tu análisis (tomando en cuenta
 ## que tratarás la gráfica únicamente como una herramienta de visualización/diagnóstico
 ## y que no llegarás a ninguna conclusión fuerte basado únicamente en la gráfica )
+
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
