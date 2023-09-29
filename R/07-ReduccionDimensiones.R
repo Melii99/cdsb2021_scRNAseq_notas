@@ -348,3 +348,68 @@ reducedDim(sce.pbmc, "PCA_clusters") <- reducedDim(
 
 ## Ver la información agregada
 head(reducedDim(sce.pbmc, "PCA_clusters"))
+
+
+
+### Usando el ruido técnico ###
+
+## Otra alternativa es conservar todos los PCs hasta que el % de variación explicado
+## alcance algun límite (por ejemplo, basado en la estimación de la variación técnica)
+
+## denoisePCA() automáticamente selecciona el número de PCs
+
+## Por default, denoisePCA() realiza algunas simulaciones, por lo tanto necesitamos
+## ‘configurar la semilla’ para obtener resultados reproducibles
+
+library(scran)
+
+set.seed(111001001)
+denoised.pbmc <- denoisePCA(sce.pbmc,
+                            technical = dec.pbmc, subset.row = top.pbmc
+)
+
+## Dimensiones
+dim(reducedDim(denoised.pbmc, "PCA"))
+
+## La dimensionalidad del output es el límite inferior para el número de PCs requeridos
+## para explicar toda la variación biológica. Lo que significa que cualquier número
+## menor de PCs definitivamente descartará algún aspecto de la señal biológica
+
+## Esto no grantiza que los PCs retenidos capturen toda la señal biológica
+
+## Esta técnica usualmente retiene más PCs que el método del punto del codo
+
+## scran::denoisePCA() internamente limita el numero de PCs, por default 5-50,
+## para evitar la selección de excesivamente pocos PCs (cuando el ruido técnico
+##es alto relativo al ruido biológico) o exceso de PCs (cuando el ruido técnico es demasiado bajo
+
+
+
+
+## ¿Qué pasa si calculamos la relación media-varianza con la función modelGeneVar
+## para el dataset sce.pbmc? ##
+
+dec.pbmc2 <- modelGeneVar(sce.pbmc)
+denoised.pbmc2 <- denoisePCA(sce.pbmc,
+                             technical = dec.pbmc2, subset.row = top.pbmc
+)
+dim(reducedDim(denoised.pbmc2))
+
+## scran::denoisePCA() tiende a funcionar mejor cuando la relación media-varianza
+## refleja el ruiudo técnico verdadero, i.e estimado por scran::modelGeneVarByPoisson()
+## o scran::modelGeneVarWithSpikes() en vez de scran::modelGeneVar()
+
+## El dataset PBMC está cerca de este límite inferior: el ruido técnico es alto
+## relativo al ruido biológico
+
+
+
+## ¿Qué pasa si calculamos el número de PCs usando el ruido técnico para el dataset sce.pbmc? ##
+
+set.seed(001001001)
+denoised.zeisel <- denoisePCA(sce.zeisel,
+                              technical = dec.zeisel, subset.row = top.zeisel
+)
+dim(reducedDim(denoised.zeisel))
+
+## Los datos de cerebro de Zeisel están cerca de este límite superior: el ruido técnico es demasiado bajo
