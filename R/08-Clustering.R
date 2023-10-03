@@ -214,9 +214,12 @@ g <- buildSNNGraph(sce.pbmc, k = 10, use.dimred = "PCA")
 ## Identificar las comunidades (clusters) usando el método Walktrap
 clust <- igraph::cluster_walktrap(g)$membership
 
-## Visualización de los clusters con un plot t-SNE
+
+## Agregar los clusters a colData de nuestro objeto
 library(scater)
 sce.pbmc$cluster <- factor(clust)
+
+## Visualización de los clusters coloreados con un plot t-SNE
 plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster")
 
 
@@ -230,9 +233,11 @@ g50 <- buildSNNGraph(sce.pbmc, k = 50, use.dimred = "PCA")
 ## Identificar las comunidades (clusters) usando el método Walktrap
 clust50 <- igraph::cluster_walktrap(g50)$membership
 
-## Visualización de los clusters con un plot t-SNE
+## Agregar los clusters a colData de nuestro objeto
 library(scater)
 sce.pbmc$cluster50 <- factor(clust50)
+
+## Visualización de los clusters coloreados con un plot t-SNE
 plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster50")
 
 
@@ -240,3 +245,60 @@ plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster50")
 ## La construcción de la red KNN se baso en la distancia Euclideana entre células
 ## La construcción de la red KNN implica que las aristas se crean entre todos los
 ## pares de células que comparten por lo menos un vecino
+
+
+
+### Eligiendo un valor de k ###
+
+## El valor de k puede ser toscamente interpretado como el tamaño anticipado de la
+## subpoblación más pequeña
+
+## Si una subpoblación tiene menos que (k+1) células entonces el método será forzado
+## a construir aristas entre células de esa subpoblación y células de otras subpoblaciones
+
+## Esto incrementa el riesgo de que la subpoblación en cuestión no forme su propio cluster
+
+## MIENTRAS MÁS PEQUEÑA SEA LA K, MÁS CLUSTERS SE VAN A GENERAR !!!
+
+
+
+### Una implementación diferente: estilo Seurat ###
+
+# Jaccard-based weights followed by Louvain clustering
+# aka 'Seurat-style' clustering
+
+## Construcción de un grafo usando una k = 10 y calcula la similitud de Jaccard
+## entre los vecinos más cercanos
+g2 <- buildSNNGraph(sce.pbmc, k = 10, use.dimred = "PCA", type = "jaccard")
+
+## Identificar las comunidades (clusters) usando el algoritmo de Louvain
+clust2 <- igraph::cluster_louvain(g2)$membership
+
+## Agregar los clusters a colData de nuestro objeto
+sce.pbmc$cluster2 <- factor(clust2)
+
+## Visualización de los clusters coloreados con un plot t-SNE
+plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster2")
+
+
+
+### Detalles de las implementaciones más comunes ###
+
+## Pipelines basados en Seurat:
+
+# Pesos basados en Jacard
+# Clustering Louvain
+
+## Pipelines basados en Scran:
+
+# Pesos basados en Randos
+# Clustering Walktrap
+
+## Comparando estas 2 implementaciones ##
+
+library("patchwork")
+
+## Grafica de las tSNEs comparado las comunidades generadas por clustering
+## basado en Scran y clustering basado en Seurat
+plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster") +
+  plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster2")
