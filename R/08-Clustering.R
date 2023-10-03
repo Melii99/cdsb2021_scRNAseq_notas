@@ -340,3 +340,45 @@ clust.labprop <- igraph::cluster_label_prop(g)$membership
 ## Algoritmo Leading Eigen. Utiliza la idea de modularidad y valores propios del grafo
 ## para asignar nodos a comunidades. Es eficiente para grafos grandes y complejos.
 clust.eigen <- igraph::cluster_leading_eigen(g)$membership
+
+
+
+### Evaluando la separación de los clusters - Modularidad ###
+
+
+## Modularidad es una métrica natural para evaluar la separación entre comunidades/clusters
+
+## La modularidad es una medida que evalúa la calidad de la partición de un grafo en comunidades.
+## Cuanto mayor sea la modularidad, mejor será la partición
+
+## La modularidad se define como la diferencia (escalada) entre el peso total observado
+## de las aristas entre los nodos en el mismo cluster y el peso total esperado si los
+## pesos fueran distribuidos aleatoriamente entre todos los pares de nodos
+
+## Nosotros calcularemos un score de modularidad para cada cluster usando las tasas
+## en vez de las diferencias, debido a que las tasas no se ven tan fuertemente
+## influenciadas por el tamaño de los clusters !!!
+
+
+## Obteniendo la métrica de modularidad
+library(bluster)
+
+## Matriz de índices de modularidad pairwise
+ratio <- pairwiseModularity(g, clust, as.ratio = TRUE) # g es el grafo y clust las (comunidad) en el grafo
+
+dim(ratio)
+
+## Heatmap de los scores de modularidad (ratio)
+library(pheatmap)
+
+## Convertimos a logaritmo
+## Agregamos +1 para que los 0s no den error por indeterminación
+pheatmap(log2(ratio + 1),
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100)
+)
+
+## Un dataset que contiene clusters bien separados debería contener la mayoría
+## del peso total observado en las entradas diagonales, i.e la mayoría de las
+## aristas ocurren entre células del mismo cluster
