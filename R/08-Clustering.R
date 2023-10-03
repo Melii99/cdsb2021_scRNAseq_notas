@@ -382,3 +382,91 @@ pheatmap(log2(ratio + 1),
 ## Un dataset que contiene clusters bien separados debería contener la mayoría
 ## del peso total observado en las entradas diagonales, i.e la mayoría de las
 ## aristas ocurren entre células del mismo cluster
+
+
+### Ejercicio ###
+
+## Obtener el peso total de la matriz (ratio) en la diagonal
+ratio_m_diagonal <- sum(diag(ratio), na.rm = TRUE)
+
+## Obtener el peso total de la matriz (ratio) fuera de la diagonal
+ratio_m_total <- sum(ratio, na.rm = TRUE)
+ratio_m_total - ratio_m_diagonal
+
+
+
+
+### Otros métodos de clustering ###
+
+## Clustering por k-means ##
+
+# PRO: Rápido
+# Se debe especificar el número de clusters de antemano
+# Favorece clusters esféricos
+
+## Clustering jerárquico ##
+
+# Produce un dendograma (árbol) representando las células y la similaridad entre
+# subpoblaciones a varias resoluciones
+# Demasiado lento para correrse en algo más grande que los datasets más pequeños de scRNA-seq
+
+
+
+### Evaluando la estabilidad de los clusters ###
+
+## Una propiedad deseable de un cluster dado es que éste sea estable a las perturbaciones
+## en los datos de entrada, de esta manera:
+
+# Pequeños cambios al procesamiento no cambiarán el resultado
+# Se incrementa la probabilidad de que las conclusiones puedan ser replicadas
+# en un estudio independiente
+
+## Valores más altos significan que los clusters se repiten más veces
+
+
+## Uno puede hacer un proceso de bootstrap para evaluar la estabilidad de un algoritmo
+## de clustering en un dataset dado y calcular la coasignación. La coasignación es
+## la probabilidad de que células elegidas al azar del cluster X y Y sean asignadas
+## al mismo cluster en la réplica del proceso de bootstrap
+
+
+## Esta función toma un objeto SingleCellExperiment como entrada, realiza una reducción
+## de dimensionalidad usando PCA, construye un grafo de vecinos más cercanos basado
+## en la similitud de Jaccard, y finalmente asigna clústeres a las células utilizando
+## el algoritmo de Louvain.
+myClusterFUN <- function(x) {
+  g <- buildSNNGraph(x, use.dimred = "PCA", type = "jaccard")
+  igraph::cluster_louvain(g)$membership
+}
+
+## Aplicamos la función myClusterFUN anteriormente definida a sce.pbmc
+originals <- myClusterFUN(sce.pbmc)
+
+## evaluar la estabilidad de los clústeres obtenidos por el algoritmo de Louvain
+set.seed(0010010100)
+## Hacer el proceso de bootstrap y calcular la probabilidad de coasignación
+coassign <- bootstrapStability(sce.pbmc,
+                               FUN = myClusterFUN,
+                               clusters = originals
+)
+
+
+## Visualizamos co un heatmap
+pheatmap(coassign,
+         cluster_row = FALSE, cluster_col = FALSE,
+         color = rev(viridis::magma(100))
+)
+
+
+## Nuevamente, queremos que los valores más altos estén en la diagonal
+## (en este caso los valores de coasignación) !!!
+
+## Probabilidad alta de coasignación indica que X no es estable con respecto a su separación de Y.
+
+## Queremos altas probabilidades de coasignación en la diagonal
+
+## Debes considerar que el bootstraping solo considera el efecto del ruido de muestreo
+## e ignora otros factores que pueden afectar la reproducibilidad (como efectos de batch
+## o variación entre los donadores)
+
+## Además, una pobre separación puede ser altamente estable
