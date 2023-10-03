@@ -302,3 +302,41 @@ library("patchwork")
 ## basado en Scran y clustering basado en Seurat
 plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster") +
   plotReducedDim(sce.pbmc, "TSNE", colour_by = "cluster2")
+
+
+### Otras implementaciones ###
+
+## Distintas métricas de distancia
+
+## construye un grafo de vecinos más cercanos (SNN: Shared Nearest Neighbor)
+g.num <- buildSNNGraph(sce.pbmc, use.dimred = "PCA", type = "number")
+
+## construye un grafo SNN donde las conexiones en el grafo se basan
+##  en la similitud de Jaccard entre los vecinos cercanos de las células.
+g.jaccard <- buildSNNGraph(sce.pbmc, use.dimred = "PCA", type = "jaccard")
+
+## construye un grafo de vecinos más cercanos (KNN: K-Nearest Neighbors)
+g.none <- buildKNNGraph(sce.pbmc, use.dimred = "PCA")
+
+## Distintos métodos de clustering
+
+## Algoritmo de Louvain.Encuentra comunidades maximizando la modularidad en el grafo.
+## A menudo utilizado para detectar comunidades en grafos grandes.
+clust.louvain <- igraph::cluster_louvain(g)$membership
+
+## Algoritmo Infomap. Se basa en la idea de que las comunidades se corresponden
+## con las rutas óptimas para comprimir información en un flujo de información.
+## A menudo utilizado para encontrar estructuras modulares en redes complejas.
+clust.infomap <- igraph::cluster_infomap(g)$membership
+
+##A lgoritmo de Greedy Fast. Iterativamente agrega nodos a comunidades para maximizar
+## la modularidad. Es un algoritmo eficiente para encontrar comunidades en grafos grandes.
+clust.fast <- igraph::cluster_fast_greedy(g)$membership
+
+## Algoritmo Label Propagation. Los nodos se asignan a la comunidad de su vecino con mayor
+## frecuencia. Es un algoritmo simple y rápido para detectar comunidades en grandes redes.
+clust.labprop <- igraph::cluster_label_prop(g)$membership
+
+## Algoritmo Leading Eigen. Utiliza la idea de modularidad y valores propios del grafo
+## para asignar nodos a comunidades. Es eficiente para grafos grandes y complejos.
+clust.eigen <- igraph::cluster_leading_eigen(g)$membership
