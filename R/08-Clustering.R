@@ -551,3 +551,35 @@ x = "clust.memory"
 ## Si tipos celulares o estados celulares se extienden sobre las fronteras de los
 ## clusters, entonces un subcluster podría representar contaminación de un tipo
 ## celular en un cluster separado
+
+
+
+### Resumen y recomendaciones ###
+
+## Un cluster no implica un tipo celular !!!
+
+## Nosotros podemos definir tantos clusters como queramos y podemos utilizar el
+## algoritmo que más nos acomode
+
+## El clustering, como un microscopio, simplemente es una herramienta para explorar los datos
+
+## Preguntar por el mejor clustering es similar a preguntar cuál es la mejor
+## magnificación en un microscopio sin contenido
+
+## Clustering basado en grafos es rápido y evita tener que hacer suposiciones fuertes
+## sobre la forma de los clusters o la distribución de las células dentro de cada cluster:
+
+# scran::buildSNNGraph()
+# igraph::cluster_walktrap() o igraph::cluster_louvain()
+
+## Modularidad y estabilidad de los clusters son diagnósticos útiles
+
+## El proceso de subclustering podría mejorar la resolución dentro de clusters grandes
+
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
