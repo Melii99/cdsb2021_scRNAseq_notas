@@ -470,3 +470,84 @@ pheatmap(coassign,
 ## o variación entre los donadores)
 
 ## Además, una pobre separación puede ser altamente estable
+
+
+
+### Subclustering ###
+
+## Mejora la resolucón al repetir el proceso de feature selection y clustering
+## dentro de un único cluster
+
+## Se enfoca en los HGVs y PCs que son los más relevantes para un cluster específico
+
+## Se construye un grafo de vecinos más cercanos (SNN) utilizando las coordenadas
+## de PCA de las células en sce.pbmc
+g.full <- buildSNNGraph(sce.pbmc, use.dimred = "PCA")
+
+## Encontrar los clusters por el algoritmo Walktrap
+clust.full <- igraph::cluster_walktrap(g.full)$membership
+
+## Se agrega la asignación de clústeres obtenida a sce.pbmc como clust.full
+sce.pbmc$clust.full <- factor(clust.full)
+
+## Visualizar la expresión de los genes "CD3E", "CCR7", "CD69", y "CD44" en diferentes clústeres.
+## Las células se agrupan en el eje x (x = "clust.full") y se colorean según su
+## asignación de clústeres (colour_by = "clust.full").
+plotExpression(sce.pbmc, # plotExpression()
+               features = c("CD3E", "CCR7", "CD69", "CD44"),
+               x = "clust.full", colour_by = "clust.full"
+)
+
+## Conocimiento biológico ##
+
+## CD3E, CCR7, CD69, y CD44 son marcadores de células T de memoria.
+## Dentro de las células T de memoria, ¿dónde están las subpoblaciones CD4+ y CD8+?
+
+## El cluster 10 parece tener valores altos para CD3E, CCR7, CD69, y CD44
+
+
+## Nos quedamos con un subset de columnas (células) correspondientes al cluster 10
+memory <- 10
+
+## Nuevo objeto sce.memory que contiene solo las células que pertenecen al clúster número 10
+sce.memory <- sce.pbmc[, clust.full == memory]
+
+## modelGeneVar() para calcular las varianzas genéticas modeladas para el clúster 10
+dec.memory <- modelGeneVar(sce.memory)
+
+## denoisePCA() para obtener los PCs principales (dentro se obtienen los HVGs)
+sce.memory <- denoisePCA(sce.memory,
+                         technical = dec.memory, # toma en cuenta la información de variabilidad genética modelada
+                         subset.row = getTopHVGs(dec.memory, prop = 0.1) # utiliza solo los HGVs
+)
+
+
+## Se repite el clustering en el subset
+
+## Se construye un grafo de vecinos más cercanos (SNN) utilizando las coordenadas
+## de PCA de las células en sce.memory (subset correspondiente al cluster 10)
+g.memory <- buildSNNGraph(sce.memory, use.dimred = "PCA")
+
+# Encontrar los clusters por el algoritmo Walktrap
+clust.memory <- igraph::cluster_walktrap(g.memory)$membership
+
+## Se agrega la asignación de clústeres obtenida a sce.memory como clust.memory
+sce.memory$clust.memory <- factor(clust.memory)
+
+## Visualizar la expresión de los marcadores CD4+ y CD8+ en en los diferentes clústeres  genrados
+## para las células del objeto sce.memory  (subset de las células correspondientes al cluster 10)
+plotExpression(sce.memory,
+features = c("CD8A", "CD4"),
+x = "clust.memory"
+)
+
+## La expresión de CD4 en este caso es baja, por lo tanto, su cambio es modesto,
+## pero la interpretación es clara
+
+## scran::quickSubCluster() ciclará sobre los clusters y realizará el proceso de
+## subclustering de acuerdo a una función especificada por el usuario.
+## Esto asume que la misma función es apropiada para todos los clusters
+
+## Si tipos celulares o estados celulares se extienden sobre las fronteras de los
+## clusters, entonces un subcluster podría representar contaminación de un tipo
+## celular en un cluster separado
