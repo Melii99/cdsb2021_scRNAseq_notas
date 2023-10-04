@@ -119,3 +119,45 @@ clust <- igraph::cluster_walktrap(g)$membership
 
 ## Agregar la información de los clusters en el sce.pbmc
 sce.pbmc$cluster <- factor(clust)
+
+
+
+###  Continuación ###
+
+
+## ¿Algunos de estos genes están asociados con los resultados de clustering?
+
+## P. ej. ¿se encuentra el gen 1 asociado con el clustering?
+plotExpression(sce.pbmc,
+               features = rownames(sce.pbmc)[1], # features especifica los genes cuya expresión se va a visualizar
+               x = "cluster", colour_by = "cluster" # x indica la variable que se utilizará para agrupar las células en el eje x
+)
+
+
+## P. ej. ¿se encuentra el gen 2 asociado con el clustering?
+plotExpression(sce.pbmc,
+               features = rownames(sce.pbmc)[2],
+               x = "cluster", colour_by = "cluster"
+)
+
+
+## P. ej. ¿se encuentra el gen 2512 asociado con el clustering?
+plotExpression(sce.pbmc,
+               features = rownames(sce.pbmc)[2512],
+               x = "cluster", colour_by = "cluster"
+)
+
+## P. ej. ¿se encuentra el gen CD3E asociado con el clustering?
+plotExpression(sce.pbmc,
+               features = "CD3E",
+               x = "cluster", colour_by = "cluster"
+)
+
+
+## Ver una gráfica como una forma de encontrar los genes marcadores obviamente
+## no nos sirve a gran escala
+
+## Necesitamos un método estadístico para identificar estos genes marcadores
+
+## La prueba t de Welch es una opción obvia para probar las diferencias en
+## la expresión entre clústeres !!!
