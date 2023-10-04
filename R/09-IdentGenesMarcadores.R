@@ -161,3 +161,77 @@ plotExpression(sce.pbmc,
 
 ## La prueba t de Welch es una opción obvia para probar las diferencias en
 ## la expresión entre clústeres !!!
+
+
+
+### Prueba t modificada de Welch pareada ###
+
+## Prueba rápida con buenas propiedades estadísticas para un gran número de células
+
+## as comparaciones pareadas proveen un log-fold change para indicar cuáles
+## clústerse son distinguidos por cada gen
+
+## ¿Por qué no comparar cada clúster con el promedio de todas las otras células?
+## Sensibilidad a la composición poblacional, una subpoblación dominante sola que dirige
+## la selección de los marcadores top para cualquier otro clúster
+
+
+
+### Ejemplo ilustrativo: CD3E como gen marcador en el dataset PBMC4k 10X ###
+
+
+## Pruebas pareadas  (combinatoria) ##
+
+## Combinando comparaciones del gen CD3E para el clúster 1
+## “Me interesa saber si el gen CD3 está diferencialmente expresado entre el clúster 1 y ..”
+
+# cualquier (any) otro clúster = P = 1.3 x 10-205 (Simes adjusted P-value)
+# todos (all) los otros clústeres = P = 0.11 (Berger’s intersection-union test)
+# algunos (some) de los otros clústeres = P = 2.0 x 10-44 (mediana u otro cuantil, Holm-adjusted P-values)
+
+
+## Extendiendo a todos los genes - Aplicación estándar ##
+
+## Para cada clúster, usar pruebas t de Welch para identificar los genes que están
+## diferencialmente expresados entre éste y cualquier (any) otro clúster
+
+## Usadas para todos los genes
+scran::pairwiseTTests()
+scran::combineMarkers()
+
+## Usando findMarkers() encontrar marcadores diferenciales entre grupos en datos de células individuales
+library(scran)
+
+markers.pbmc <- findMarkers(sce.pbmc,
+                            groups = sce.pbmc$cluster, # EWncontrar marcadores agrupando por clusters
+                            test.type = "t", pval.type = "any" # Prueba t, comparación con todos los clusters
+)
+
+## La lista resultante contiene dataframes correspondientes a cada cluster
+## Cada dataframe (genes marcadores) ya se encuentran ordenados por p-value (más significativos)
+## En caso de querer ordenar por logfold change (genes más sobreexpresados o subexpresados)
+## es posible pero puede que no sean tan significativos
+
+
+## Explorando los resultados ##
+
+## Seleccion del clúster 9 para explorar los genes marcadores asociados con este clúster
+chosen <- "9"
+
+## Se almacenan los genes marcadores del clúster seleccionado en la variable interesting
+interesting <- markers.pbmc[[chosen]]
+
+## plotExpression() para visualizar la expresión de los cuatro primeros genes marcadores
+plotExpression(sce.pbmc, rownames(interesting)[1:4],
+               x = "cluster", colour_by = "cluster"
+)
+
+## Explorar los genes marcadores obtenidos con un heatmap
+best.set <- interesting[interesting$Top <= 6, ]
+logFCs <- as.matrix(best.set[, -(1:3)])
+colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
+library(pheatmap)
+pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+
+## Usamos el campo Top para identificar un conjunto de genes que distinguen el
+## clúster 9 de cualquier otro clúster !!!
