@@ -292,3 +292,59 @@ pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
 
 ## E.g., un gen sobreexpresado en una proporción pequeña de células en un clúster sigue
 ## siendo un marcador efectivo si el foco está en la especificidad más que en la sensibilidad
+
+
+
+### Encontrando marcadores específicos de clústeres ###
+
+
+## Por defecto, scran::findMarkers() dará un alto rango a genes que están DE en
+## cualquier comparación pareada
+
+## Quiero genes que son específicos de cada clúster
+
+## Tú quieres genes que son DE en todas las comparaciones pareadas
+## Para cada clúster, usa pruebas t de Welch para identificar genes que están
+## sobreexpresados entre éste y todos los otros clústeres
+
+
+## Identificar genes que tienen una expresión significativamente mayor en
+## comparación con otros clústeres, y usando pval.type = "all" se considerarán
+## todos los valores p, independientemente de si están ajustados o no
+## Es decir, se identifican genes solo upregulated para ese cluster
+markers.pbmc.up3 <- findMarkers(sce.pbmc,
+                                groups = sce.pbmc$cluster,
+                                direction = "up", pval.type = "all" #
+)
+
+##
+interesting.up3 <- markers.pbmc.up3[[chosen]]
+
+## CONTRAS:
+
+## Los genes pueden aparecer con sobreexpresión para diferentes tipos celulares
+## (Ej. poblaciones DN(CD4-/CD8-) no hay expresión en CD4 NI EN CD8 ) por lo que
+## con sólo uno no siempre se pueden distinguir (a menos que las poblaciones sean
+## muy diferentes y esten bien definidas)
+
+
+
+## findMarkers con pval.type some ##
+
+
+## Útil cuando pval.type="all" es muy estricto todavía pval.type="any" es muy generoso
+
+## Aplica la corrección Holm-Bonferroni a los P-values y toma el mejor valor de
+## en medio como el P-value combinado
+
+## Perderás algunas garantías ofrecidas por los otros métodos !!!
+
+
+## Para cada clúster, usa pruebas t de Welch para identificar los genes que están
+## sobreexpresados entre éste y algunos de los otros clústers
+markers.pbmc.up4 <- findMarkers(sce.pbmc,
+                                groups = sce.pbmc$cluster,
+                                direction = "up", pval.type = "some"
+)
+
+interesting.up4 <- markers.pbmc.up4[[chosen]]
