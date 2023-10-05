@@ -348,3 +348,167 @@ markers.pbmc.up4 <- findMarkers(sce.pbmc,
 )
 
 interesting.up4 <- markers.pbmc.up4[[chosen]]
+
+
+
+### Pruebas alternas ###
+
+
+## La prueba t no es la única forma de comparar dos grupos de mediciones
+
+## Quiero una prueba que pueda ser usada perfectamente para distinguir dos clústeres uno del otro
+# Prueba de rangos Wilcoxon
+
+## Quiero identificar genes que son expresados más frecuentemente en un clúster que en otro
+# Prueba Binomial
+
+
+
+### Prueba de rangos de Wilcoxon ###
+
+
+## Evalúa directamente la separación entre la distribución de la expresión de los diferentes clústeres
+
+## Es proporcional al área bajo la curva (AUC), que es la probabilidad de que una
+## célula al azar de un clúster tenga mayor que expresión que una célula al azar de otro clúster
+
+# AUCs de 1 o 0 indican que los dos clústeres tienen distribuciones de expresión separadas
+
+## También se conoce como prueba Wilcoxon-Mann-Whitney (WMW)
+
+
+## findMarkers para Wilcoxon ##
+
+## Para cada clúster, usa la prueba de rangos de Wilcoxon para identificar genes
+## que están sobreexpresados entre éste y cualquier otro clúster
+markers.pbmc.wmw <- findMarkers(sce.pbmc,
+                                groups = sce.pbmc$cluster, test.type = "wilcox", # wilcox
+                                direction = "up", pval.type = "any"
+)
+
+interesting.wmw <- markers.pbmc.wmw[[chosen]]
+
+## Heatmap de genes marcadores con Wilcoxon
+best.set <- interesting.wmw[interesting.wmw$Top <= 5, ]
+AUCs <- as.matrix(best.set[, -(1:3)])
+colnames(AUCs) <- sub("AUC.", "", colnames(AUCs))
+pheatmap(AUCs,
+         breaks = seq(0, 1, length.out = 21),
+         color = viridis::viridis(21)
+)
+
+## Resumen de la prueba de rangos de Wilcoxon ##
+
+
+## frece directamente la propiedad deseable de un gen marcador
+## (i.e. que el gen distinga perfectamente entre dos clústeres)
+
+## Es simétrico con respecto a las diferencias en el tamaño de los grupos comparados
+
+## s mucho más lento comparado con la prueba t (aunque en general no es un problema en la práctica)
+
+
+
+### Prueba binomial ###
+
+
+## Es una prueba que identifica los genes que difieren en la proporción de células
+## que se expresan entre clústeres
+
+## Da una definición mucho más estricta de genes marcadores
+
+## Convierte la expresión en una medida binaria de presencia/ausencia, por lo que
+## toda la información cuantitativa es ignorada
+
+## Desde una perspectiva práctica, puede ser más fácil para validar
+
+
+
+## findMarkers para binomial ##
+
+
+## Para cada clúster, usa la prueba Binomial para identificar genes que están
+## sobreexpresados en comparación con cualquier otro clúster
+markers.pbmc.binom <- findMarkers(sce.pbmc,
+                                  groups = sce.pbmc$cluster, test.type = "binom",
+                                  direction = "up", pval.type = "any"
+)
+
+interesting.binom <- markers.pbmc.binom[[chosen]]
+
+## El efecto en el tamaño se reporta como el log-fold change en la proporción de
+## las células que se expresan entre clústeres
+
+## Log-fold changes grandes positivos, indican que el gen está más frecuentemente
+## expresado en un clúster comparado con otro
+
+
+## Visualizando genes marcadores de la prueba bionomial
+top.genes <- head(rownames(interesting.binom))
+plotExpression(sce.pbmc, x = "cluster", features = top.genes)
+
+
+## Resumen de la prueba binomial ##
+
+
+## La prueba Binomial no toma en cuenta la normalización
+
+## roduce genes marcadores que pueden ser más fáciles de validar
+
+## er más estricto puede llevar a la pérdida de buenos marcadores candidatos
+
+
+
+### Métodos de expresión diferencial personalizados ###
+
+
+## ¿Por qué no usar edgeR/DESeq2/limma-voom u otros métodos personalizados (e.g., MAST)?
+
+## Claro que puedes! Pero éstos son tal vez algo exagerados para identificar genes marcadores
+
+## Las células son nuestras “réplicas” para el propósito de identificar genes marcadores
+
+## edgeR/DESeq2/limma-voom hacen asunciones más fuertes acerca de los datos que
+## es más probable que no se cumplan para células individuales en scRNA-seq !!!
+
+
+
+### Problemas estadísticos ###
+
+## Invalidez de P-values ##
+
+## Todas las estrategias de DE para detectar genes marcadores entre clústeres son
+## estadísticamente defectuosas de alguna manera
+
+## “Dragado de datos”: El análisis DE se realiza usando los mismos datos usados para obtener los clústeres
+
+## Las pruebas para genes DE entre clústeres producirá inevitablemente algunos
+## resultados significativos y así es como los clústeres serán definidos!
+
+## Aún cuando los P-values son defectuosos, el efecto no es muy dañino para la
+## detección de genes ya que los P-values solo son usados para los rangos
+
+## No se pueden usar P-values para definir “diferencias significativas” entre los
+## clústeres con respecto a un umbral de la tasa de error
+
+
+
+### Replicación ###
+
+## Idealmente, validar algunos de los marcadores con una población de células independientes
+## (idealmente usando una técnica diferente, e.g., hibridación fluorescente in situ o qPCR)
+
+
+
+### Comentarios adicionales ###
+
+## La estrategia de análisis DE es que los marcadores son definidos relativo a
+## subpoblaciones en el mismo dataset
+
+## Si un gen se expresa uniformemente a través de la población no servirá como un marcador
+## e.g., los marcadores de las células T no serán detectados si solamente hay células T en los datos
+
+## usualmente no es un problema, ya que tenemos idea de las células que se capturaron
+
+## Existen métodos de machine learning para hacer la identificación de los genes marcadores,
+## pero la humilde prueba t sigue siendo muy buena
