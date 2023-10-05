@@ -137,3 +137,90 @@ clust <- igraph::cluster_walktrap(g)$membership
 
 ## Agregar la información de los clusters en el sce.pbmc
 sce.pbmc$cluster <- factor(clust)
+
+
+
+### Continuación: Asignando las etiquetas celulares a partir de los datos de referencia ###
+
+
+## Un enfoque directo es comparar los perfiles de expresión single-cell con datasets previamente anotados
+
+## Las etiquetas pueden entonces ser asignadas a cada célula en nuestro dataset
+## no caracterizado de prueba basado en la muestra de referencia más similar,
+## por dar alguna definición de “similar”
+
+## Cualquier dataset de expresión génica etiquetado (microarreglos, RNA-seq bulk,
+## scRNA-seq) puede ser usado como una referencia
+
+## Sin embargo, su confiabilidad depende enormemente en la calidad de los datos
+## originales y la experiencia de los autores originales quienes asignaron las
+## etiquetas en primer lugar
+
+## Asignar las etiquetas a un dataset de “prueba” a partir de un dataset de “entrenamiento”
+## (referencia), es un problema estándar en estadística / machine learning
+
+## Es preferible tener una idea de lo que podríamos encontrar parra elegir un
+## dataset de referencia
+
+## Hay que revisar la calidad de los datos y la forma en que se procesaron
+
+## Usaremos el método SingleR (Aran et al. 2019)
+
+
+
+## SingleR ##
+
+## Asigna las etiquetas a las células basado en las muestras de referencia con las
+## correlaciones de rangos más altas de Spearman
+
+## Para reducir el ruido, identifica genes marcadores entre pares de etiquetas
+## (en la referencia) y calcula la correlación usando solamente esos marcadores
+
+## Hace algún tipo de tuneado fino, repitiendo las correlaciones solamente con los
+## genes marcadores de las etiquetas con el mejor score, ayudando a resolver cualquier
+## ambigüedad entre esas etiquetas al eliminar el ruido a partir de marcadores
+## irrelevantes para otras etiquetas
+
+
+##  Referencias ##
+
+# Human #
+#celldex::BlueprintEncodeData()
+#celldex::DatabaseImmuneCellExpressionData()
+#celldex::HumanPrimaryCellAtlasData()
+#celldex::MonacoImmuneData()
+#celldex::NovershternHematopoieticData()
+
+# Mice #
+#celldex::ImmGenData()
+#celldex::MouseRNASeqData()
+
+
+
+## Usando las referencias ##
+
+## Definimos las referencias a usar
+library(celldex)
+ref <- celldex::BlueprintEncodeData()
+
+
+## Usando las referencias integradas ##
+
+## Especificar las etiquetas y clasificar según las asignadas por SingleR().
+library(SingleR)
+
+pred <- SingleR(
+  test = sce.pbmc, ref = ref,
+  labels = ref$label.main
+)
+
+## Visualizar la asignación de etiquetas obtenidas por SingleR
+## Heatmap de los scores por célula y por etiqueta
+plotScoreHeatmap(pred)
+
+
+## Idealmente, cada célula debería exhibir un score alto en una etiqueta
+## relativa a todas las otras
+
+## Los scores se muestran antes de cualquier tuneado fino y son normalizadas
+## a [0, 1] dentro de cada célula
