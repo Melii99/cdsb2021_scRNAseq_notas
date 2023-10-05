@@ -512,3 +512,25 @@ plotExpression(sce.pbmc, x = "cluster", features = top.genes)
 
 ## Existen métodos de machine learning para hacer la identificación de los genes marcadores,
 ## pero la humilde prueba t sigue siendo muy buena
+
+
+
+### Resumen y recomendaciones ###
+
+
+## Crea múltiples listas de genes marcadores con diferentes niveles de rigor
+
+## La forma más simple de interpretar los genes marcadores es que son los
+## sobreexpresados de “forma única”, o son “genes específicos de clústeres”,
+## especialmente si queremos imponer un log-fold change mínimo
+
+## Puedes requerir hacer una identificación de genes marcadores más enfocada,
+## e.g., subset de los datos de solo 2 clústeres de interés y entonces correr scran::findMarkers()
+
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
