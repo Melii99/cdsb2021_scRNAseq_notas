@@ -224,3 +224,23 @@ plotScoreHeatmap(pred)
 
 ## Los scores se muestran antes de cualquier tuneado fino y son normalizadas
 ## a [0, 1] dentro de cada célula
+
+
+
+### Podado de etiquetas (Label pruning) ###
+
+
+## SingleR intentará podar aquellas asignaciones de baja calidad marcándolas como NA
+
+## El podado se hace calculando la diferencia del score de la etiqueta asignada
+## a partir del score de la mediana dentro de cada célula y entonces podando las
+## células con un valor pequeño de esta diferencia
+
+## Se guardan las etiquetas "podadas"
+total_pruned <- sum(is.na(pred$pruned.labels))
+
+## Heatmap de los scores por célula y por etiqueta de las etiquetas "podadas"
+plotScoreHeatmap(pred, show.pruned = TRUE)
+
+## Plot de la distribución de los scores de las clasificaciones realizadas por SingleR
+plotScoreDistribution(pred)
