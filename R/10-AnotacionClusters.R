@@ -280,3 +280,29 @@ plotHeatmap(sce.pbmc,
             order_columns_by = "labels",
             features = top.markers, center = TRUE, zlim = c(-3, 3), main = lab
 )
+
+
+
+### Comparando las etiquetas con los clústeres ###
+
+
+## Queremos saber cuántas células de cada clúster han sido asignadas a cada etiqueta
+## predicha por SingleR (anotaciones de las referencias)
+
+##  Generar una tabla que muestra la relación entre las etiquetas asignadas por
+## SingleR y los clústeres que encontramos y guardamos en  sce.pbmc
+tab <- table(Assigned = pred$pruned.labels, Cluster = sce.pbmc$cluster)
+
+
+## Heatmap de la proporción de células en cada clúster que han sido asignadas a cada etiqueta
+library(pheatmap)
+pheatmap(prop.table(tab, margin = 2),
+         color = colorRampPalette(c("white", "blue"))(101)
+)
+
+## Heatmap simlar al anterior, ahora usando el logaritmo base 2 del número de
+## células en cada clúster asignadas a cada etiqueta predicha por SingleR
+## Se añade un pseudo-recuento de 10 para evitar saltos de color abruptos con solo 1 célula
+pheatmap(log2(tab + 10),
+         color = colorRampPalette(c("white", "blue"))(101)
+)
