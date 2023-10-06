@@ -244,3 +244,39 @@ plotScoreHeatmap(pred, show.pruned = TRUE)
 
 ## Plot de la distribución de los scores de las clasificaciones realizadas por SingleR
 plotScoreDistribution(pred)
+
+
+
+### Identificando los genes con anotación dirigida ###
+
+
+## ¿Por qué las células en este clúster se etiquetan como el tipo celular X?
+
+## Examina la expresión de los genes marcadores para cada etiqueta en el dataset de prueba
+
+## Si una célula en el dataset de prueba está asignado con confianza a una
+## etiqueta en particular, uno esperaría que tenga una fuerte expresión de los
+## marcadores de esa etiqueta (al menos sobreexpresión con respecto a las
+## células asignadas a otras etiquetas)
+
+# install gmp, ClusterR, mbkmeans dependencies if needed
+
+## Agregar las etiquetas de las células predichas por SingleR a sce.pbmc
+sce.pbmc$labels <- pred$labels
+
+## Obtener los genes marcadores de las metadatos (de.genes) del objeto pred almacenar en all.markers.
+all.markers <- metadata(pred)$de.genes
+
+## Ejemplo de label: células B
+lab <- "B-cells"
+
+
+## Obtener los 10 genes principales de los genes marcadores específicos para las
+## células tipo B y almacenarlos en top.markers.
+top.markers <- Reduce(union, sapply(all.markers[[lab]], head, 10)) # head, 10
+
+## Heatmap de la expresión de los genes marcadores específicos (top.markers) para las células tipo B
+plotHeatmap(sce.pbmc,
+            order_columns_by = "labels",
+            features = top.markers, center = TRUE, zlim = c(-3, 3), main = lab
+)
