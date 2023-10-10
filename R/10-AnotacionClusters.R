@@ -306,3 +306,74 @@ pheatmap(prop.table(tab, margin = 2),
 pheatmap(log2(tab + 10),
          color = colorRampPalette(c("white", "blue"))(101)
 )
+
+
+## Visualizando ##
+
+## t-SNE donde las células se encuentran coloreadas según las etiquetas dadas por SingleR
+plotTSNE(sce.pbmc, colour_by = "labels", text_by = "labels")
+
+##  t-SNE donde las células se encuentran coloreadas según los clústeres encontrados
+plotTSNE(sce.pbmc, colour_by = "cluster", text_by = "labels")
+
+
+### Resumen de la anotación basada en una referencia (e.g., SingleR) ###
+
+##  centra en aspectos de los datos que se sabe son interesantes, simplifica el
+## proceso de la interpretación biológica
+
+## Está restringido por la diversidad y la resolución de las etiquetas disponibles
+## en el dataset de referencia
+
+## También, es posible suplir referencias personalizadas a SingleR
+
+
+
+### Asignando las etiquetas de tipos celulares a partir de marcadores ###
+
+## ¿Para qué usar nuestros genes marcadores agrupados?
+
+# Revisarlos en hojas de cálculo
+# Observar heatmaps
+# Realizar un gene set enrichment analysis
+
+
+## Gene set enrichment analysis ##
+
+## Identifica las rutas y procesos que están (relativamente) activos en cada clúster
+## basado en la sobreexpresión de los genes asociados en comparación con otros clústeres
+
+## Método confiable para determinar si las rutas están sobre- o sub- expresadas entre clúesteres
+
+## Existen un montón de herramientas para gene set enrichment analysis
+
+## Todas las conclusiones son relativas a otros clústeres, haciéndo más difícil
+## determinar la identidad celular si alguno no está presente en el mismo estudio
+
+
+
+## Calculando las actividades de los conjuntos de genes ###
+
+## Calcular el promedio de la expresión en log en todos los genes, en un conjunto
+## de genes para cada célula y examinar los clústeres con valores altos (gene set activities)
+
+## Se necesita proveer de conjuntos de genes
+
+##  todos los genes en el conjunto pueden exhibir el mismo patrón de diferencia
+## y los genes no-DE añadirán ruido, “diluyendo” la fuerza de cualquiera de las
+## diferencias comparadas a un análisis que se centra directamente en genes DE
+
+## Es más una visualización útil que la base para cualquier análisis estadístico real
+
+
+
+### Resumen y recomendaciones ###
+
+## La anotación de tipos celulares “automática”, como SingleR, es mejor cuando funciona
+## (i.e. cuando hay un dataset de referencia apropiado)
+
+## Usualmente necesitaremos usar un método manual, como aquellos basados en agrupar
+## los genes marcadores (e.g., gene set enrichment analysis)
+
+## La anotación del tipo celular ofrecerá una reconsideración inmediata de los
+## parámetros del agrupamiento y/o algunos retoques manuales a los clústeres
