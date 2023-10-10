@@ -377,3 +377,11 @@ plotTSNE(sce.pbmc, colour_by = "cluster", text_by = "labels")
 
 ## La anotación del tipo celular ofrecerá una reconsideración inmediata de los
 ## parámetros del agrupamiento y/o algunos retoques manuales a los clústeres
+
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
