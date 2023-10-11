@@ -190,3 +190,56 @@ plotTSNE(merged,
          colour_by = data.frame(pool = factor(merged$pool)),
          other_fields = c("pool")
 ) + facet_wrap(~pool)
+
+
+
+### Nuestros clusters vs los originales ###
+
+
+## Las siguientes gráficas nos ayudan a comparar nuestros clusters vs los que
+## encontraron en el estudio original
+
+## Para cols_label
+## Definir colores, de no hacerlo scater nos los pone en una escala continua
+cols_label <- Polychrome::palette36.colors(length(unique(merged$label)))
+## Asignar las labels a los colores correspondientes en la paleta
+names(cols_label) <- unique(merged$label)
+
+# Para cols_celltype.mapped
+## Definir colores, de no hacerlo scater nos los pone en una escala continua
+cols_celltype.mapped <- Polychrome::palette36.colors(length(unique(merged$celltype.mapped)))
+## Asignar las labels a los colores correspondientes en la paleta
+names(cols_celltype.mapped) <- unique(merged$celltype.mapped)
+
+
+## Tsne de Nuestros clusters encontrados vs anotación de células por los autores originales
+plotTSNE(merged, colour_by = "label", text_by = "label") +
+  theme(legend.position = "none") +
+  scale_colour_manual(values = cols_label) +
+  plotTSNE(merged, colour_by = "celltype.mapped") +
+  theme(legend.position = "none") +
+  scale_colour_manual(values = cols_celltype.mapped)
+
+## Scale for 'colour' is already present. Adding another scale for 'colour',
+## which will replace the existing scale.
+## Scale for 'colour' is already present. Adding another scale for 'colour',
+## which will replace the existing scale.
+
+
+## ¿Parecen similares?
+
+## Es difícil el proceso de comparar clusters
+
+## Podemos usar bluster para evaluar númericamente que tanto se parecen los clusters.
+## Entre más cerca de 1, mejor en pairwiseRand()
+
+## También podemos hacer un heatmap
+
+
+## Evaluar numéricamente el parecido entre los clusters
+library("bluster")
+pairwiseRand(colLabels(merged), merged$celltype.mapped, "index")
+
+## Heatmap de las coincidencias entre los clusters encontrados y los originales
+by.label <- table(colLabels(merged), merged$celltype.mapped)
+pheatmap::pheatmap(log2(by.label + 1), color = viridis::viridis(101)) # Log2 y +1 para manejar valores cero
