@@ -148,3 +148,45 @@ merged <- runTSNE(merged, dimred = "corrected", external_neighbors = TRUE)
 
 ## Reducción dimensionalidad UMAP
 merged <- runUMAP(merged, dimred = "corrected", external_neighbors = TRUE)
+
+
+
+### Exploración de los datos de ejemplo ###
+
+
+## Exploremos si tenemos clusters con una diferencia grande en el número de celulas
+## entre las muestras sin y con inyecciones de td-Tomato
+
+## Exploremos el número de células en cada cluster a lo largo de los
+## 3 lotes de secuenciación (batch)
+
+
+## Clusters vs DE por td-Tomato
+table(colLabels(merged), merged$tomato)
+
+## Clusters vs lotes de muestras (batch)
+table(colLabels(merged), merged$pool)
+
+## Visualización ##
+
+## Visualizar nuestros clusters que (26 en dimensiones reducidas) de t-SNE
+## Queremos que todos los clusters tengan muestras de cada lote de secuenciación (batch).
+## Vemos que no parece que haya mucha señal en base a td-Tomato
+library("patchwork")
+plotTSNE(merged, colour_by = "tomato", text_by = "label") +
+  plotTSNE(merged, colour_by = data.frame(pool = factor(merged$pool)))
+
+## Podemos usar facet_wrap() para reducir el over-plotting y ver mejor la información:
+##  t-SNE donde las células se agrupan por las categorías de tomato y se visualizan en
+## paneles separados para cada categoría
+plotTSNE(merged,
+         colour_by = "tomato",
+         other_fields = c("tomato")
+) + facet_wrap(~tomato)
+
+##  t-SNE donde las células se agrupan por las categorías de pool y se visualizan en
+## paneles separados para cada categoría
+plotTSNE(merged,
+         colour_by = data.frame(pool = factor(merged$pool)),
+         other_fields = c("pool")
+) + facet_wrap(~pool)
