@@ -243,3 +243,140 @@ pairwiseRand(colLabels(merged), merged$celltype.mapped, "index")
 ## Heatmap de las coincidencias entre los clusters encontrados y los originales
 by.label <- table(colLabels(merged), merged$celltype.mapped)
 pheatmap::pheatmap(log2(by.label + 1), color = viridis::viridis(101)) # Log2 y +1 para manejar valores cero
+
+
+
+### Análisis de expresión diferencial ###
+
+
+## En RNA-seq estamos acostumbrados a evaluar si hay diferencias en los niveles  de expresión
+## de genes entre condiciones, así que es natural que lo hagamos con scRNA-seq también
+
+## Pero los datos de scRNA-seq tienen muchos ceros
+
+
+## Pseudo-bulking ##
+
+## El proceso de pseudo-bulking es un truco que nos permite usar métodos de bulk
+## RNA-seq para analizar nuestros datos de scRNA-seq
+
+## Cómo tenemos muchas células de cada condición, para cada gene podemos sumar los
+## niveles de expresión entre todas las células de esa condición
+
+
+## Ejemplo de mi trabajo:
+  # 12 muestras
+  # 7 regiones
+  # 47,681 spots (digamos que células)
+
+# Podemos comprimir la información a una matriz de 12 * 7 = 84 columnas
+
+# Nos quedamos con pocas réplicas para nuestro análisis, pero justamente los métodos
+# de bulk RNA-seq están diseñados para esos escenarios (claro, entre más datos mejor!!!)
+
+
+## Podemos hacerlo manualmente o de forma más sencilla con la función aggregateAcrossCells() ##
+
+## La función aggregateAcrossCells() agrupa los datos de merged
+## según las combinaciones únicas de "celltype.mapped" y "sample" y realiza una
+## agregación (como sumar o promediar) dentro de cada grupo. Los resultados de
+## esta operación de agregación se almacenan en el objeto summed. Dependiendo del contexto,
+## esta agregación puede ser útil para resumir los datos y facilitar análisis posteriores
+
+# Using 'label' and 'sample' as our two factors; each column of the output
+# corresponds to one unique combination of these two factors.
+summed <- aggregateAcrossCells(merged,
+                               id = colData(merged)[, c("celltype.mapped", "sample")]
+)
+
+summed
+
+dim(merged)
+
+dim(summed)
+
+with(colData(merged), length(unique(celltype.mapped)) * length(unique(sample)))
+
+## En teoría podríamos tener más columnas, pero no las tenemos todas porque no
+## tenemos datos para todas las combinaciones
+
+## Esto puede afectar nuestro análisis, y pues afecta cuantas variables podremos
+## usar para ajustar
+
+## Por ejemplo, si agregamos sexo con 2 opciones, duplicaríamos el número teórico
+## de columnas pero tal vez no tengamos suficientes datos
+
+## Si lo llevas al extremo, terminas con los mismos datos de scRNA-seq que con los que empezamos
+
+
+
+## Convertir a un objeto nuevo ##
+
+## Hagamos nuestro análisis de expresión diferencial
+
+## Empezaremos con solo un tipo celular: Mesenchyme
+
+label <- "Mesenchyme"
+current <- summed[, label == summed$celltype.mapped]
+dim(current)
+
+
+## Vemos que nos quedamos con solo 14,699 genes a lo largo de 6 muestras
+## Esto sería un experimento pequeño de bulk RNA-seq
+
+
+
+### Edge R ###
+
+## Usaremos edgeR de Robinson, McCarthy e Smyth, Bioinformatics, 2010 que es uno
+## de los paquetes más usados para análisis de expresión diferencial en bulk RNA-seq
+
+## Crear una DGEList para usar en EdgeR
+library("edgeR")
+y <- DGEList(counts(current), samples = colData(current))
+y
+
+
+## Pre-procesamiento ##
+
+## Antes de poder continuar, vamos a eliminar muestras que construimos con el
+## proceso de pseudo-bulking que no tengan al menos 10 células
+discarded <- current$ncells < 10
+y <- y[, !discarded]
+summary(discarded)
+
+## Eliminar los genes que tengan bajos niveles de expresión
+keep <- filterByExpr(y, group = current$tomato)
+y <- y[keep, ]
+summary(keep)
+
+
+## Normalizar los datos ##
+
+## Pero si ya habíamos normalizado los datos de scRNA-seq, ¿qué pasó?
+## Empezamos de nuevo con las cuentas originales en y <- DGEList(counts(current),
+## samples=colData(current)) y no las normalizadas.
+
+## calcNormFactors() asume que la mayoría de los genes no están diferencialmente expresados
+y <- calcNormFactors(y)
+y$samples
+
+## Podemos visualizar los cambios de expresión para todos los genes, una muestra a la vez
+par(mfrow = c(2, 3))
+for (i in seq_len(ncol(y))) {
+  plotMD(y, column = i)
+}
+
+## Podemos visualizar los cambios de expresión para todos los genes, una muestra a la vez
+par(mfrow = c(2, 3))
+for (i in seq_len(ncol(y))) {
+  plotMD(y, column = i)
+}
+
+## Podemos repetir el plotMDS() pero con colores por lote (batch) de pool.
+plotMDS(cpm(y, log = TRUE),
+        col = c("3" = "darkorchid1", "4" = "darkblue", "5" = "tomato4")[factor(y$samples$pool)]
+)
+
+## Acá vemos que si hay diferencias entre lotes, en particular entre el lote de las
+## muestras 1 y 2 y el resto, ya que el eje X explica el 38% de la varianza.
