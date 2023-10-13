@@ -450,3 +450,54 @@ de_n
 topTags(res)
 
 ## Encontramos 16 genes diferencialmente expresados por la inyección de td-Tomato.
+
+
+
+### Análisis de expresión diferencial - De forma sencilla ###
+
+
+## La función pseudoBulkDGE() corre todos esos pasos por nosotros!!!
+
+## Remover todas las muestras de pseudo-bulk con un numero 'insuficiente' de células
+summed.filt <- summed[, summed$ncells >= 10]
+
+## Realizar un análisis de expresión génica diferencial en datos pseudo-bulk
+library("scran")
+de.results <- pseudoBulkDGE(summed.filt, # objeto
+                            label = summed.filt$celltype.mapped, # Grupos
+                            design = ~ factor(pool) + tomato, # Relación entre variables predictoras (modelo lineal)
+                            coef = "tomatoTRUE", # Contraste a evaluar
+                            condition = summed.filt$tomato # Condiciones exp.
+)
+
+## Tipo de dato de la salida (Nos regresa una lista con los resultados para cada uno de nuestros tipos celulares)
+class(de.results)
+
+length(de.results)
+
+## Podemos extraer los resultados para nuestro tipo celular de interés !!!
+## por ejemplo Allantois.
+
+## Guardar resultados de expresión génica diferencial específicamente para el tejido "Allantois"
+cur.results <- de.results[["Allantois"]]
+## Ordenar estos resultados por p-value (ascendente)
+cur.results[order(cur.results$PValue), ]
+
+## Guardar el coeficiente biológico de variación específico para "Allantois"
+y.allantois <- metadata(cur.results)$y
+## Visualizarlo
+plotBCV(y.allantois)
+
+
+## También nos dice que tipos celulares fallaron porque no teníamos suficiente
+## información para hacer el análisis
+metadata(de.results)$failed
+
+## Podemos hacer la misma gráfica que hicimos de forma manual para Mesenchyme.
+
+## Guardar resultados de expresión génica diferencial específicamente para el tejido "Mesenchyme"
+cur.results.Mesenchyme <- de.results[["Mesenchyme"]]
+## Guardar el coeficiente biológico de variación específico para "Mesenchyme"
+y.Mesenchyme <- metadata(cur.results.Mesenchyme)$y
+## Visualizar
+plotBCV(y.Mesenchyme)
