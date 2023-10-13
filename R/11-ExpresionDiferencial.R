@@ -439,6 +439,9 @@ plotQLDisp(fit)
 ## Modelo estadistico ##
 
 ## Ahora si podemos correr nuestro modelo estádistico
+
+## Análisis de expresión diferencial
+
 ## Se ejecutan pruebas de contraste de tipo LRT (Likelihood Ratio Test) para
 ## identificar genes diferencialmente expresados en un modelo ajustado utilizando
 ## el paquete edgeR en R.
@@ -458,13 +461,13 @@ topTags(res)
 
 ## La función pseudoBulkDGE() corre todos esos pasos por nosotros!!!
 
-## Remover todas las muestras de pseudo-bulk con un numero 'insuficiente' de células
+## Remover todas las muestras de pseudo-bulk con menos de 10 células
 summed.filt <- summed[, summed$ncells >= 10]
 
 ## Realizar un análisis de expresión génica diferencial en datos pseudo-bulk
 library("scran")
 de.results <- pseudoBulkDGE(summed.filt, # objeto
-                            label = summed.filt$celltype.mapped, # Grupos
+                            label = summed.filt$celltype.mapped, # Grupos (para todos los tipos celulares)
                             design = ~ factor(pool) + tomato, # Relación entre variables predictoras (modelo lineal)
                             coef = "tomatoTRUE", # Contraste a evaluar
                             condition = summed.filt$tomato # Condiciones exp.
@@ -501,3 +504,76 @@ cur.results.Mesenchyme <- de.results[["Mesenchyme"]]
 y.Mesenchyme <- metadata(cur.results.Mesenchyme)$y
 ## Visualizar
 plotBCV(y.Mesenchyme)
+
+
+
+### Ejercicios ###
+
+## Hagamos el cálculo de pseudo-bulking de forma manual para la primera muestra
+## de summed y el gene con los valores más altos de expresión para esa muestra.
+## Es decir, trabajaremos con el siguiente gene.
+colData(summed)[1, ]
+
+which.max(counts(summed)[, 1]) # 360
+
+## Usa el objeto merged para volver a calcular el siguiente valor.
+
+counts(summed)[which.max(counts(summed)[, 1]), 1] # 22802
+
+## Respuesta: calcular la suma de los recuentos para el gen "Ptma" en el tejido
+## "Allantois" y en la muestra número 5 del objeto de datos combinados.
+sum(counts(merged)[
+  names(which.max(counts(summed)[, 1])),
+  merged$celltype.mapped == "Allantois" & merged$sample == 5
+])
+
+
+## Visualización de resultados de expresión diferencial ##
+
+
+## Usando los resultados de expresión diferencial para el tipo celular Mesenchyme,
+## reproduce la siguiente visualización.
+
+## Explora la información que tenemos en cur.results.Mesenchyme.
+
+## Si usas el paquete ggplot2, tendrás que usar as.data.frame() para convertir un
+##objeto DFrame a un data.frame.
+
+## Revisa que valores salen en cada eje y en los colores.
+
+## Tal vez algunos valores tiene alguna transformación.
+
+## ¿Por qué sale un warning diciendo que eliminamos 9011 puntos? 24
+
+library("ggplot2")
+
+## class(cur.results.Mesenchyme)
+# [1] "DFrame"
+# attr(,"package")
+# [1] "S4Vectors"
+
+## Volcano plot donde vemos en el eje X el cambio de expresión y en el eje Y el
+## valor p transformado con -log10(p). Los genes se encuentran  coloreados según
+## si tienen un FDR < 0.05 o no
+df <- as.data.frame(cur.results.Mesenchyme)
+df$label <- rownames(df)
+p <- ggplot(
+  df,
+  aes(
+    x = logFC,
+    y = -log10(PValue),
+    color = FDR < 0.05,
+    label = label
+  )
+) +
+  geom_point()
+## Volcano plot
+p
+
+
+## Podemos agregarle etiquetas usando el paquete ggrepel !!!
+p + ggrepel::geom_text_repel(data = subset(df, FDR < 0.05))
+
+
+## Se puede hacer una versión interactiva con plotly !!!
+plotly::ggplotly(p)
