@@ -577,3 +577,99 @@ p + ggrepel::geom_text_repel(data = subset(df, FDR < 0.05))
 
 ## Se puede hacer una versión interactiva con plotly !!!
 plotly::ggplotly(p)
+
+
+
+
+### Análisis de abundancia diferencial ###
+
+
+## Recordando, tenemos 6 muestras en total.
+
+## Otro tipo de análisis que podemos hacer es preguntarnos si cambió la composición
+## celular entre nuestras muestras con y sin la inyección de td-Tomato.
+
+## Este tipo de análisis nos dirá que tipos celulares cambiaron de acuerdo a
+## nuestras condiciones de interés, que puede ser igual de interesante que
+## encontrar genes diferencialmente expresados.
+
+## Es como si scRNA-seq fuera un super-FACS donde usamos todo el transcriptoma.
+
+## Hagamos una tabla de la frecuencia de cada tipo celular a lo largo de nuestras
+## muestras. Es decir, una tabla de abundancias
+
+
+## Tabla de abundancia de tipos celulares en las muestras
+abundances <- table(merged$celltype.mapped, merged$sample)
+abundances <- unclass(abundances)
+head(abundances)
+
+## A esta tabla le podemos agregar algo de información de nuestras muestras,
+## y con eso construir un objeto del tipo que le gusta a edgeR
+
+
+## Agregar la columna de metadata y generar un objeto DGEList
+extra.info <- colData(merged)[match(colnames(abundances), merged$sample), ]
+y.ab <- DGEList(abundances, samples = extra.info)
+y.ab
+
+
+## A diferencia de los análisis de expresión diferencial,
+## no usaremos calcNormFactors() porque este tipo de análisis no cumple,
+## generalmente, con las condiciones del método estadístico !!!
+
+
+## A continuación filtramos los tipos celulares para los cuales no tenemos
+## suficiente información, si es el caso
+
+## Filtrar las células por expresión génica y el grupo definido por y.ab$samples$tomato
+keep <- filterByExpr(y.ab, group = y.ab$samples$tomato)
+y.ab <- y.ab[keep, ]
+summary(keep)
+
+## Luego hacemos nuestro análisis de abundancia con edgeR el cual nos permite
+## usar el modelo estadístico que está diseñado para valores enteros (cuentas)
+##y pocas réplicas
+
+## Es la misma formúla del modelo estadístico (design) que usamos anteriormente, pero para otros número
+
+
+## Análisis de abundancia ##
+
+## Generar la matriz de diseño para el análisis DE
+design <- model.matrix(~ factor(pool) + factor(tomato), y.ab$samples)
+design
+
+## Se estiman los parámetros de dispersión para el análisis DE
+y.ab <- estimateDisp(y.ab, design, trend = "none")
+summary(y.ab$common.dispersion)
+
+## gráfico de la biplot de la dispersión biológica frente a la dispersión técnica
+plotBCV(y.ab, cex = 1)
+
+
+## A diferencia de antes, tenemos pocos puntos (antes eran genes, ahora son tipos celulares),
+## así que no estimaremos una curva, por eso usamos abundance.trend = FALSE !!!
+
+
+## Ajustar un modelo de regresión lineal generalizado (GLM) a tus datos de expresión génica
+fit.ab <- glmQLFit(y.ab, design, robust = TRUE, abundance.trend = FALSE)
+
+summary(fit.ab$var.prior)
+
+## visualizar la dispersión (variabilidad) estimada para cada tipo celular
+plotQLDisp(fit.ab, cex = 1)
+
+
+## Corremos el análisis DE:
+## análisis ipo t (test t) para evaluar las diferencias en la expresión génica
+## entre las condiciones experimentales que has especificado en tu modelo de diseño
+res <- glmQLFTest(fit.ab, coef = ncol(design))
+
+summary(decideTests(res))
+
+## Tipos celulares que muestran diferencia en abundancia entre condiciones esperimentales
+topTags(res)
+
+## Entre los tipos celulares donde teníamos suficiente información, solo 2 muestran diferencias
+## en sus niveles de frecuencia entre las muestras con y sin inyecciones de td-Tomato
