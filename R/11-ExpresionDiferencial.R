@@ -673,3 +673,24 @@ topTags(res)
 
 ## Entre los tipos celulares donde teníamos suficiente información, solo 2 muestran diferencias
 ## en sus niveles de frecuencia entre las muestras con y sin inyecciones de td-Tomato
+
+
+
+### Comentarios sobre la interpretación ###
+
+
+## La distinción entre ambos tipos de análisis en scRNA-seq es artificial
+
+## Las etiquetas que usamos para el análisis de abundancia están definidas por
+## los niveles de expresión de los genes
+
+## Este tema de cuantas veces usas los datos y como eso afecta las pruebas
+## estadísticas que usamos es un tema de investigación actual
+
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
