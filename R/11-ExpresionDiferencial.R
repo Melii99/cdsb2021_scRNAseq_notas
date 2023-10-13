@@ -32,14 +32,15 @@ library("edgeR") ## para expresión diferencial
 ## Análisis de expresión diferencial ##
 
 ## Buscamos cambios en niveles de expresión entre condiciones para células del
-## mismo tipo que están presentes en todas las condiciones
+## mismo tipo que están presentes en todas las condiciones !!!
 
 
 ## Análisis de abundancia diferencial ##
 
-## Buscamos cambios en la composición de los tipos celulares entre condiciones
+## Buscamos cambios en la composición de los tipos celulares entre condiciones !!!
 
-## Podría ser entre estados celulares en vez de tipos celulares
+## Podría ser entre estados celulares en vez de tipos celulares !!!
+
 ## Son dos lados de la misma moneda
 
 
@@ -48,6 +49,9 @@ library("edgeR") ## para expresión diferencial
 
 ## Embriones de ratón quiméricos. Pijuan-Sala, B. et al. A single-cell molecular
 ## map of mouse gastrulation and early organogenesis. Nature 566, 490–495 (2019).
+
+## 3 réplicas: batches
+
 
 ## Descarga de los datos desde bioconductor y guardar el SCE
 library("MouseGastrulationData")
@@ -112,7 +116,9 @@ dec.chimera <- modelGeneVar(sce.chimera, block = sce.chimera$sample)
 chosen.hvgs <- dec.chimera$bio > 0
 
 
-## Merging ##
+## ¡¡¡ Merging !!! ##
+
+## Uso de batchelor ##
 
 ## corregir batch effects y combinar los datos de diferentes experimentos
 library("batchelor")
@@ -228,7 +234,7 @@ plotTSNE(merged, colour_by = "label", text_by = "label") +
 
 ## ¿Parecen similares?
 
-## Es difícil el proceso de comparar clusters
+## Es difícil el proceso de comparar clusters (a simple vista)
 
 ## Podemos usar bluster para evaluar númericamente que tanto se parecen los clusters.
 ## Entre más cerca de 1, mejor en pairwiseRand()
@@ -255,10 +261,14 @@ pheatmap::pheatmap(log2(by.label + 1), color = viridis::viridis(101)) # Log2 y +
 ## Pero los datos de scRNA-seq tienen muchos ceros
 
 
+
 ## Pseudo-bulking ##
 
 ## El proceso de pseudo-bulking es un truco que nos permite usar métodos de bulk
 ## RNA-seq para analizar nuestros datos de scRNA-seq
+
+## Se suma la expresión de diferentes células por mismo gen y misma condición
+## (eliminar problema de 0s  comprimir la matriz)
 
 ## Cómo tenemos muchas células de cada condición, para cada gene podemos sumar los
 ## niveles de expresión entre todas las células de esa condición
@@ -291,10 +301,13 @@ summed <- aggregateAcrossCells(merged,
 
 summed
 
+## Dimensiones iniciales
 dim(merged)
 
+## Dimensiones reducidas
 dim(summed)
 
+## Numero teorico de columnas final, pero muchas columnas npo tienen  datos, por eso 186
 with(colData(merged), length(unique(celltype.mapped)) * length(unique(sample)))
 
 ## En teoría podríamos tener más columnas, pero no las tenemos todas porque no
@@ -380,3 +393,60 @@ plotMDS(cpm(y, log = TRUE),
 
 ## Acá vemos que si hay diferencias entre lotes, en particular entre el lote de las
 ## muestras 1 y 2 y el resto, ya que el eje X explica el 38% de la varianza.
+
+
+
+### Modelo estadístico ###
+
+
+## Si todo nos parece bien, podemos seguir con definir nuestro modelo estadístico
+
+## Vamos a ajustar por lote (batch) y encontrar diferencias por la inyección de td-Tomato
+
+## Como empezamos con las cuentas desde cero, tenemos que tomar en cuenta la
+## variación por lote de secuenciación
+
+design <- model.matrix(~ factor(pool) + factor(tomato), y$samples)
+design
+
+## Si queremos explorar nuestro modelo estadístico de forma interactiva,
+## podemos usar ExploreModelMatrix
+if (interactive()) {
+  ExploreModelMatrix::ExploreModelMatrix(y$samples[, c("pool", "tomato")], ~ factor(pool) + factor(tomato))
+}
+
+## Tal y como en bulk RNA-seq, podemos usar la información de los genes para
+## mejorar nuestros estimados de la varianza para cada gene, de tal forma que
+## mejoramos los resultados estadísticos aunque tengamos pocas muestras
+y <- estimateDisp(y, design)
+summary(y$trended.dispersion)
+
+## Visualizando la varianza (dispersión estimada)
+plotBCV(y)
+
+## Ajustar el modelo lineal generalizado y realiza una estimación robusta de los parámetros
+fit <- glmQLFit(y, design, robust = TRUE)
+
+## Resumen de la estimación de la varianza del modelo
+summary(fit$var.prior)
+
+## Resumen estadístico de sobre los grados de libertad previos del modelo
+summary(fit$df.prior)
+
+## Evaluar la calidad del ajuste del modelo en términos de dispersión
+plotQLDisp(fit)
+
+## Modelo estadistico ##
+
+## Ahora si podemos correr nuestro modelo estádistico
+## Se ejecutan pruebas de contraste de tipo LRT (Likelihood Ratio Test) para
+## identificar genes diferencialmente expresados en un modelo ajustado utilizando
+## el paquete edgeR en R.
+res <- glmQLFTest(fit, coef = ncol(design))
+de_n <- summary(decideTests(res))
+de_n
+
+## Resumen de los genes encontrados como diferencialmente expresados
+topTags(res)
+
+## Encontramos 16 genes diferencialmente expresados por la inyección de td-Tomato.
