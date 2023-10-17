@@ -148,4 +148,67 @@ dense.size
 sparse.size <- object.size(pbmc.data)
 sparse.size
 
-dense.size / sparse.size
+dense.size / sparse.size # ¡EN ESTE CASO UNA MATRIZ NO DISPERSA OCUPA ~ 24 VECES MAS ESPACIO!
+
+
+### Control de calidad QC ###
+
+## Algunas métricas de control de calidad comúnmente utilizadas por la comunidad incluyen:
+
+# El número de genes únicos detectados en cada célula.
+
+# Las células de baja calidad o las gotitas vacías suelen tener muy pocos genes.
+
+# Los dobletes o multipletes celulares pueden exhibir un recuento de genes aberrantemente alto
+
+# De manera similar, el número total de moléculas detectadas dentro de una célula
+# (se correlaciona fuertemente con genes únicos).
+
+# El porcentaje de lecturas que se asignan al genoma mitocondrial.
+
+# Las células de baja calidad / moribundas a menudo exhiben una extensa contaminación mitocondrial
+
+
+## Calculamos métricas de control de calidad mitocondrial con la función PercentageFeatureSet(),
+## que calcula el porcentaje de recuentos que se originan a partir de un conjunto de características.
+
+## El operador [[ puede agregar columnas a los metadatos del objeto. Este es un gran
+## lugar para almacenar estadísticas de control de calidad. Entonces calculamos y
+## añadimos la cantidad de lecturas que corresponden al genoma mitocondrial.
+
+## Porcentaje de moléculas de mtADN en cada célula con PercentageFeatureSet() y
+## almacenarlas en 'percent.mt'
+pbmc[["percent.mt"]] <- PercentageFeatureSet(pbmc, pattern = "^MT-")
+
+## Visualizamos las métricas de control de calidad mencionadas anteriormente como
+## un diagrama de violín. Ademas vemos la correlación entre el numero de moléculas
+## de RNA detectadas en cada célula con el número de genes únicos y con el
+## porcentaje de lecturas que corresponden a mtADN.
+
+## Diagrama de violín del número de genes únicos detectados (nFeature_RNA),
+## el número total de moléculas de RNA (nCount_RNA), y el porcentaje de moléculas
+## de RNA mitocondrial (percent.mt).
+VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+## scatter plot para visualizar la relación entre el número total de moléculas de RNA
+## (nCount_RNA) y el porcentaje de mtADN (percent.mt).
+plot1 <- FeatureScatter(pbmc, feature1 = "nCount_RNA", feature2 = "percent.mt")
+
+## scatter plot para para visualizar la relación entre el número total de moléculas
+## de RNA (nCount_RNA) y el número de genes únicos detectados (nFeature_RNA).
+plot2 <- FeatureScatter(pbmc, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+
+## Combinar los dos gráficos de dispersión
+plot1 + plot2
+
+
+## Finalmente filtramos aquellas células que se salen de los estándares de cada uno de los parámetros.
+
+## Conservar las células con más de 200 genes únicos detectados, menos de 2500 genes
+## únicos detectados y un porcentaje MT inferior al 5%.
+pbmc <- subset(pbmc, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+
+
+## ¿Dónde se almacenan la métricas de QC en Seurat?
+## Están almacenadas en la seccion de @meta.data del objeto Seurat.
+head(pbmc@meta.data, 5)
