@@ -328,3 +328,50 @@ DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
 ## Heatmaps (15)  para las primera s 15 dimensión  del PCA. Muestra la expresión génica
 ## de las 500  células con las proyecciones más altas en cada dimensión
 DimHeatmap(pbmc, dims = 1:15, cells = 500, balanced = TRUE)
+
+
+
+### Determinar la dimensionalidad del conjunto de datos ###
+
+
+## Para superar el extenso ruido técnico en cualquier característica única para
+## los datos de scRNA-seq, Seurat agrupa las células en función de sus puntuaciones
+## de PCA, y cada PC representa esencialmente una “metafunción” que combina información
+## en un conjunto de características correlacionadas. Por lo tanto, los componentes
+## principales principales representan una compresión sólida del conjunto de datos.
+## Sin embargo, ¿cuántos componentes deberíamos elegir incluir? 10? 20? 100?
+
+
+# En Macosko et al, implementamos una prueba de remuestreo inspirada en el procedimiento
+# JackStraw. Permutamos aleatoriamente un subconjunto de los datos (1% por defecto) y
+# volvemos a ejecutar PCA, construyendo una “distribución nula” de puntuaciones de
+# características, y repetimos este procedimiento. Identificamos PC “importantes”
+# como aquellas que tienen un gran enriquecimiento de características de bajo valor p.
+
+
+# NOTE: This process can take a long time for big datasets, comment out for expediency. More
+# approximate techniques such as those implemented in ElbowPlot() can be used to reduce
+# computation time
+pbmc <- JackStraw(pbmc, num.replicate = 100)
+pbmc <- ScoreJackStraw(pbmc, dims = 1:20)
+
+## La función JackStrawPlot() proporciona una herramienta de visualización para
+## comparar la distribución de los p-values para cada PC con una distribución uniforme
+## (línea discontinua). Las PC “significativas” mostrarán un gran enriquecimiento de
+## funciones con valores p bajos (curva sólida por encima de la línea discontinua).
+## En este caso, parece que hay una fuerte caída en la importancia después de los
+## primeros 10-12 PCs.
+
+## Gráfico que compara la distribución de los valores p para cada PC (1:15) con una
+## distribución uniforme (línea discontinua)
+JackStrawPlot(pbmc, dims = 1:15)
+
+## Un método heurístico alternativo genera un “diagrama de codo (Elbow Plot)”:
+## una clasificación de componentes principales basada en el porcentaje de varianza
+## xplicada por cada uno (función ElbowPlot()). En este ejemplo, podemos observar un
+## “codo” alrededor de PC9-10, lo que sugiere que la mayor parte de la señal verdadera
+## se captura en las primeras 10 PC.
+
+## Visualización del método elbow para notar la "caida" en el porcentaje de varianza
+## explicada por cada PC
+ElbowPlot(pbmc)
