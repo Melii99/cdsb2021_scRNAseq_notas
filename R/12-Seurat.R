@@ -390,3 +390,35 @@ pbmc <- FindClusters(pbmc, resolution = 0.5)
 ## resolution es un parámetro que controla la resolución del agrupamiento:
 ## Un valor más alto de resolution produce un número mayor de grupos, mientras
 ## que un valor más bajo produce un número menor de grupos más grandes.
+
+
+
+### Reducción dimensional no lineal (UMAP/tSNE) ###
+
+
+## Seurat ofrece varias técnicas de reducción dimensional no lineal, como tSNE y
+## UMAP, para visualizar y explorar estos conjuntos de datos. El objetivo de estos
+## algoritmos es aprender la variedad subyacente de los datos para colocar células
+## similares juntas en un espacio de baja dimensión. Las células dentro de los grupos
+## basados en gráficos determinados anteriormente deben ubicarse conjuntamente en
+## estos gráficos de reducción de dimensión. Como entrada para UMAP y tSNE, se sugiere
+## usar las mismas PC como entrada para el análisis de agrupamiento.
+
+
+## Generar UMAP con los promeros 10 PCs
+# If you haven't installed UMAP, you can do so via reticulate::py_install(packages = 'umap-learn')
+pbmc <- RunUMAP(pbmc, dims = 1:10)
+
+## Visualizar el UMAP
+# Note that you can set `label = TRUE` or use the LabelClusters function to help label
+# individual clusters
+DimPlot(pbmc, reduction = "umap")
+
+
+## Se puede guardar el objeto en este punto para que se pueda volver a cargar
+## fácilmente sin tener que volver a ejecutar los pasos computacionalmente intensivos
+## realizados anteriormente o compartir fácilmente con los colaboradores.
+
+#if (interactive()) {
+#  saveRDS(pbmc, file = "pbmc_tutorial.rds")
+#}
