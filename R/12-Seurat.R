@@ -375,3 +375,18 @@ JackStrawPlot(pbmc, dims = 1:15)
 ## Visualización del método elbow para notar la "caida" en el porcentaje de varianza
 ## explicada por cada PC
 ElbowPlot(pbmc)
+
+
+
+### Clustering ###
+
+
+## Construcción de un grafo SNN usando los primeros 10 PCs
+pbmc <- FindNeighbors(pbmc, dims = 1:10)
+
+## Encontrar clusters usando el algoritmo de Louvain
+pbmc <- FindClusters(pbmc, resolution = 0.5)
+
+## resolution es un parámetro que controla la resolución del agrupamiento:
+## Un valor más alto de resolution produce un número mayor de grupos, mientras
+## que un valor más bajo produce un número menor de grupos más grandes.
