@@ -522,3 +522,35 @@ pbmc.markers %>%
   group_by(cluster) %>%
   top_n(n = 10, wt = avg_log2FC) -> top10
 DoHeatmap(pbmc, features = top10$gene) + NoLegend()
+
+
+
+### Asignar la identidad del tipo celular a los clusters ###
+
+
+## Podemos usar marcadores canónicos para hacer coincidir fácilmente la agrupación
+## imparcial con los tipos de células conocidos.
+
+## asignando nuevos nombres a los clusters en tus datos de scRNA-seq y visualizarlos
+## en un gráfico de dispersión
+
+## Vector con los nuevos nombres de los clusters en el mismo orden que los niveles del objeto pbmc.
+new.cluster.ids <- c(
+  "Naive CD4 T", "CD14+ Mono", "Memory CD4 T", "B", "CD8 T", "FCGR3A+ Mono",
+  "NK", "DC", "Platelet"
+)
+
+names(new.cluster.ids) <- levels(pbmc) # mismo orden
+
+## usando la función RenameIdents(), asignas estos nuevos nombres a los clusters en el objeto pbmc.
+pbmc <- RenameIdents(pbmc, new.cluster.ids)
+
+## Scaterplot con nuevas etiquetas de los clusters
+DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
+
+
+### Guardar Resultados ###
+
+#if (interactive()) {
+#  saveRDS(pbmc, file = "pbmc3k_final.rds")
+#}
