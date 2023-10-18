@@ -554,3 +554,11 @@ DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
 #if (interactive()) {
 #  saveRDS(pbmc, file = "pbmc3k_final.rds")
 #}
+
+
+
+### Información de la sesión de R ###
+Sys.time()
+proc.time()
+options(width = 120)
+sessioninfo::session_info()
