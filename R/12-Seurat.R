@@ -212,3 +212,15 @@ pbmc <- subset(pbmc, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent
 ## ¿Dónde se almacenan la métricas de QC en Seurat?
 ## Están almacenadas en la seccion de @meta.data del objeto Seurat.
 head(pbmc@meta.data, 5)
+
+
+
+### Normalización ###
+
+## De forma predeterminada, se emplea un método de normalización de escala global
+## "LogNormalize” que normaliza las medidas de expresión de características para
+## cada célula por la expresión total, multiplica esto por un factor de escala
+## (10.000 por defecto) y transforma el resultado en logaritmos. Los valores
+## normalizados se almacenan en pbmc [["RNA"]]@data.
+
+pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
