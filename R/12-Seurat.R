@@ -279,3 +279,52 @@ LabelPoints(plot = plot1, points = top10, repel = TRUE)
 ## Escalar todos los genes con ScaleData()
 all.genes <- rownames(pbmc)
 pbmc <- ScaleData(pbmc, features = all.genes)
+
+
+
+### Reducción dimensional lineal - PCA ###
+
+
+## A continuación, realizamos PCA sobre los datos escalados. De forma predeterminada,
+## solo las características variables determinadas previamente se utilizan como entrada,
+## pero se pueden definir mediante el argumento de características si desea elegir
+## un subconjunto diferente.
+
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
+
+## Seurat proporciona varias formas útiles de visualizar tanto las células como
+## las características que definen el PCA, incluidas VizDimReduction(), DimPlot()
+## y DimHeatmap().
+
+
+## Es posible examinar y visualizar los resultados de PCA de diferentes formas:
+
+## resultados del análisis de PCA para las dimensiones 1 a 5 y muestra las características
+## (genes) más importantes asociadas con cada dimensión.
+print(pbmc[["pca"]], dims = 1:5, nfeatures = 5)
+
+## visualización de los pesos (cargas) de las características para las dos
+## primeras dimensiones del PCA.
+VizDimLoadings(pbmc, dims = 1:2, reduction = "pca")
+
+## gráfico de dispersión para visualizar las células en las dos primeras dimensiones del PCA
+DimPlot(pbmc, reduction = "pca")
+
+
+## En particular, DimHeatmap() permite una fácil exploración de las fuentes
+## primarias de heterogeneidad en un conjunto de datos y puede ser útil cuando se
+## intenta decidir qué PC incluir para análisis posteriores posteriores. Tanto las
+## células como las características se ordenan de acuerdo con sus puntajes de PCA.
+## Establecer cells en un número traza las células “extremas” en ambos extremos del
+## espectro, lo que acelera drásticamente el trazado de grandes conjuntos de datos.
+## Aunque claramente es un análisis supervisado, consideramos que esta es una
+## herramienta valiosa para explorar conjuntos de características correlacionadas.
+
+
+## Heatmap  para la primera dimensión  del PCA. Muestra la expresión génica de las 500
+## células con las proyecciones más altas (en la primera dimensión del PCA).
+DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
+
+## Heatmaps (15)  para las primera s 15 dimensión  del PCA. Muestra la expresión génica
+## de las 500  células con las proyecciones más altas en cada dimensión
+DimHeatmap(pbmc, dims = 1:15, cells = 500, balanced = TRUE)
