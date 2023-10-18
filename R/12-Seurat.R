@@ -224,3 +224,34 @@ head(pbmc@meta.data, 5)
 ## normalizados se almacenan en pbmc [["RNA"]]@data.
 
 pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
+
+
+
+### Detección de genes (caractersticas) altamente variables ###
+
+
+## A continuación, calculamos un subconjunto de características que exhiben una
+## alta variación de célula a célula en el conjunto de datos (es decir, están altamente
+## expresadas en algunas células y poco expresadas en otras). El equipo de Seurat
+## y otros equipos han descubierto que centrarse en estos genes en el análisis
+## posterior ayuda a resaltar la señal biológica en conjuntos de datos unicelulares.
+
+## El procedimiento en Seurat mejora a comparación de las versiones anteriores
+## al modelar directamente la relación de varianza media inherente a los datos de
+## una sola célula, y se implementa en la función FindVariableFeatures().
+## De forma predeterminada, se devuelven 2000 características por conjunto de datos
+## (aunque se puede modificar). Estos se utilizarán en análisis posteriores, como PCA.
+
+## Encomtramos HVGs con FindVariableFeatures()
+pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 2000)
+
+## Identificar los 10 genes más altamente variables
+top10 <- head(VariableFeatures(pbmc), 10)
+
+## Top 10 HVGs
+top10
+
+## Graficar los HVGs con y sin labels
+library(Seurat)
+VariableFeaturePlot(pbmc)
+LabelPoints(plot = plot1, points = top10, repel = TRUE)
