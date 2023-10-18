@@ -422,3 +422,103 @@ DimPlot(pbmc, reduction = "umap")
 #if (interactive()) {
 #  saveRDS(pbmc, file = "pbmc_tutorial.rds")
 #}
+
+
+
+### Caracteristicas diferencialmente expresadas (biomarcadores de los clusters) ###
+
+
+## Seurat puede ayudar a encontrar marcadores que definan clústeres mediante
+## expresión diferencial. De forma predeterminada, identifica marcadores positivos
+## y negativos de un solo grupo (especificado en ident.1), en comparación con todas
+## las demás células. FindAllMarkers() automatiza este proceso para todos los clústeres,
+## pero también se pueden comparar grupos de clústeres entre sí o contra todas las células.
+
+## El argumento min.pct requiere que se detecte una característica en un porcentaje
+## mínimo en cualquiera de los dos grupos de células, y el argumento thresh.test
+## requiere que una característica se exprese diferencialmente (en promedio) en
+## alguna cantidad entre los dos grupos. Puede establecer ambos en 0, pero con un
+## aumento dramático en el tiempo, ya que esto probará una gran cantidad de
+## características que probablemente no sean altamente discriminatorias.
+
+## ¿Demasiado lento?
+
+## Como otra opción para acelerar estos cálculos, se puede configurar el número
+## máximo de células por identificador. Esto reducirá la resolución de cada clase
+## de identidad para que no tenga más células que las que se establezcan.
+## Si bien generalmente habrá una pérdida de potencia, los aumentos de velocidad
+## pueden ser significativos y es probable que las características expresadas de
+## manera más diferencial aún se eleven a la cima.
+
+
+## Encontrar todos los marcadores para el cluster 2
+cluster2.markers <- FindMarkers(pbmc, ident.1 = 2, min.pct = 0.25)
+head(cluster2.markers, n = 5)
+
+## Encontrar todos los marcadoresque distinguen al cluster 5 de los clusters 0 y 3
+cluster5.markers <- FindMarkers(pbmc, ident.1 = 5, ident.2 = c(0, 3), min.pct = 0.25)
+head(cluster5.markers, n = 5)
+
+## Encontrar genes marcadores (sobreexpresión) para cada cluster comparados con todas las células restantes
+
+pbmc.markers <- FindAllMarkers(pbmc, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+# only.pos = TRUE - se reportan solo los positivos (los genes que están sobreexpresados)
+# min.pct = 0.25 - porcentaje mínimo de células
+# logfc.threshold = 0.25 - umbral de cambio en el logfold change
+# (su expresión es al menos un 25% mayor en un grupo en comparación con otro grupo.)
+
+
+## utilizar el paquete dplyr en R para manipular y analizar los resultados de marcadores
+## (pbmc.markers) obtenidos previamente
+
+## Selección de los dos mejores marcadores para cada cluster en función de su avg_log2FC
+pbmc.markers %>%
+  group_by(cluster) %>%
+  top_n(n = 2, wt = avg_log2FC)
+
+
+## Seurat tiene varias pruebas de expresión diferencial que se pueden configurar
+## con el parámetro test.use. Por ejemplo, la prueba ROC devuelve el “poder de clasificación”
+## para cualquier marcador individual (que varía de 0 - aleatorio a 1 - perfecto)
+
+## Encontrar marcadores específicos para el cluster 0
+cluster0.markers <- FindMarkers(pbmc, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+# ident.1 = 0 - 0 es el identificador del cluster que estás seleccionando.
+# logfc.threshold = 0.25 - umbral de fold change mínimo para considerar un gen como marcador
+# test.use = "roc" - Realizar prueba de curva ROC para evaluar la capacidad de discriminación de los genes
+# only.pos = TRUE - Solo se consideran los genes que tienen una sobreexpresión como marcadores
+
+
+## Se incluyen varias herramientas para visualizar la expresión de los marcadores.
+## VlnPlot() (muestra distribuciones de probabilidad de expresión entre clústeres)
+## y FeaturePlot() (visualiza la expresión de características en un gráfico tSNE o
+## PCA) son nuestras visualizaciones más utilizadas. También sugerimos explorar RidgePlot(),
+## CellScatter() y DotPlot() como métodos adicionales para ver su conjunto de datos.
+
+
+## Gráfico de violín para las expresiones de los genes MS4A1 y CD79A
+VlnPlot(pbmc, features = c("MS4A1", "CD79A"))
+
+
+## Gráfico de violín para los genes NKG7 y PF4 utilizando las cuentas crudas
+## (raw counts) en lugar de los valores de expresión transformados.
+VlnPlot(pbmc, features = c("NKG7", "PF4"), slot = "counts", log = TRUE)
+
+## Gráfico de puntos para la expresión de los genes indicados (MS4A1, GNLY, CD3E, etc.)
+## en diferentes células (permite visualizar la distribución de expresión en diferentes clusters)
+FeaturePlot(pbmc, features = c(
+  "MS4A1", "GNLY", "CD3E", "CD14", "FCER1A", "FCGR3A", "LYZ", "PPBP",
+  "CD8A"
+))
+
+
+# DoHeatmap() generates an expression heatmap for given cells and features. In this case,
+# we are plotting the top 10 markers (or all markers if less than 10) for each cluster.
+
+##Heatmap de expresión para los 10 genes principales (marcadores) en cada cluster
+pbmc.markers %>%
+  group_by(cluster) %>%
+  top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(pbmc, features = top10$gene) + NoLegend()
