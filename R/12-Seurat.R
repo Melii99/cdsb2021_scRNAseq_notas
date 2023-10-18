@@ -255,3 +255,27 @@ top10
 library(Seurat)
 VariableFeaturePlot(pbmc)
 LabelPoints(plot = plot1, points = top10, repel = TRUE)
+
+
+
+### Escalar los datos ###
+
+
+## A continuación, aplicamos una transformación lineal (“escalado”) que es un paso
+## de preprocesamiento estándar antes de las técnicas de reducción dimensional como PCA.
+
+
+## La función ScaleData():
+
+# Cambia la expresión de cada gen, de modo que la expresión media en las células sea 0
+
+# Escala la expresión de cada gen, de modo que la varianza entre las células sea 1
+
+# Este paso otorga el mismo peso en los análisis posteriores, de modo que los genes
+# altamente expresados no dominen
+
+# Los resultados de esto se almacenan en pbmc [["RNA"]]@scale.data.
+
+## Escalar todos los genes con ScaleData()
+all.genes <- rownames(pbmc)
+pbmc <- ScaleData(pbmc, features = all.genes)
